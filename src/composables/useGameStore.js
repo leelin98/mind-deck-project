@@ -59,6 +59,9 @@ const state = reactive({
   // 新聞卡預覽 Modal
   newsCardPreview: null, // { news }
 
+  // 最後融合的卡片 ID（置頂顯示用）
+  lastSynthesizedCardId: null,
+
   // Active view
   activeTab: 'combat',
 
@@ -78,12 +81,10 @@ const selectedCards = computed(() =>
 )
 
 const encyclopediaItems = computed(() =>
-  state.cards
-    .filter(c => !c.owned)
-    .map(c => ({
-      ...c,
-      quiz: QUIZZES.find(q => q.cardId === c.id) || null,
-    }))
+  state.cards.map(c => ({
+    ...c,
+    quiz: QUIZZES.find(q => q.cardId === c.id) || null,
+  }))
 )
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -206,15 +207,11 @@ function resetCombat() {
   state.antidoteError = false
 }
 
-// 新聞文章專有名詞卡 modal
+// 新聞文章專有名詞卡 modal → 直接開百科 modal
 function openTermCard(word) {
   const term = state.activeNews?.highlightedTerm
   if (!term || term.word !== word) return
-  const card = state.cards.find(c => c.id === term.cardId)
-  const quiz = QUIZZES.find(q => q.cardId === term.cardId)
-  if (card) {
-    state.termCardModal = { card, quiz, phase: 'preview', answer: null }
-  }
+  openEncyclopediaCard(term.cardId)
 }
 
 function startTermQuiz() {
@@ -361,7 +358,10 @@ function attemptSynthesis(recipeId) {
   }
 
   const resultCard = state.cards.find(c => c.id === recipe.result)
-  if (resultCard) resultCard.owned = true
+  if (resultCard) {
+    resultCard.owned = true
+    state.lastSynthesizedCardId = recipe.result
+  }
   state.points += 5
   state.synthesisFeedback = 'success'
   setTimeout(() => { state.synthesisFeedback = null }, 2500)
