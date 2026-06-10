@@ -38,6 +38,7 @@
             @wheel.prevent="onStackWheel"
             @touchstart.passive="onStackTouchStart"
             @touchmove.prevent="onStackTouchMove"
+            @touchend.passive="onStackTouchEnd"
           >
 
             <!-- 今日新聞卡（z-index 最低，始終可見） -->
@@ -164,16 +165,15 @@
               </div>
             </div>
 
-            <!-- 已通關提示 -->
+            <!-- 已通關提示（僅顯示 badge，不阻擋戰鬥） -->
             <div v-if="state.activeNews?.completed" class="combat-completed-notice">
               <span class="combat-completed-icon">✦</span>
               <p class="combat-completed-title">已完成此挑戰</p>
-              <p class="combat-completed-sub">精通 {{ TOPIC_LABELS[state.activeNews?.topic] || '' }} 領域</p>
-              <button class="btn-secondary mt-3" @click="closeNewsDetail">← 返回新聞清單</button>
+              <p class="combat-completed-sub">再次挑戰看看！</p>
             </div>
 
-            <!-- 出牌區（在文章下方，隨頁面捲動）-->
-            <div v-if="!state.activeNews?.completed" class="fan-stage">
+            <!-- 出牌區（永遠可出戰） -->
+            <div class="fan-stage">
               <div class="fan-stage-header">
                 <span class="fan-stage-label">選擇 3 張資產卡出戰</span>
                 <span class="fan-stage-count">{{ selectedCardIds.length }}/3</span>
@@ -224,13 +224,18 @@
           </template>
 
           <!-- 非 SELECT 階段 -->
-          <div v-else class="tab-panel">
+          <div v-else class="tab-panel" ref="resultPanelEl">
 
-            <div v-if="state.combatPhase === 'reveal'" class="reveal-phase">
+            <!-- reveal 與 result 共用：解析數值框永遠顯示 -->
+            <div
+              v-if="state.combatPhase === 'reveal' || state.combatPhase === 'result'"
+              class="reveal-phase"
+            >
               <BattleFormula :result="state.combatResult" />
             </div>
 
-            <div v-else-if="state.combatPhase === 'result'" class="result-phase">
+            <!-- result：成功訊息接在解析框下方 -->
+            <div v-if="state.combatPhase === 'result'" class="result-phase" ref="resultSuccessEl">
               <div class="result-card success">
                 <div class="result-icon">🏆</div>
                 <h3 class="result-title">解析成功！</h3>
@@ -244,10 +249,10 @@
                   💊 解藥成功 — 已獲得新資產卡
                 </p>
                 <div class="result-news-card-earned">
-                  <img src="/images/cards/news-001.jpg" class="result-news-card-img" alt="新聞卡" />
+                  <img :src="`${BASE_URL}images/cards/news-001.jpg`" class="result-news-card-img" alt="新聞卡" />
                   <span class="result-news-card-label">🎴 新聞卡已加入資產庫</span>
                 </div>
-                <button class="btn-secondary" @click="closeNewsDetail">返回新聞清單</button>
+                <button class="btn-secondary" @click="goToArsenal">去我的知識庫 →</button>
               </div>
             </div>
 
@@ -292,6 +297,12 @@
       <!-- ══ ARSENAL TAB ══ -->
       <section v-else-if="state.activeTab === 'arsenal'" class="arsenal-tab">
 
+        <!-- 知識庫大標 -->
+        <div class="arsenal-hero">
+          <h2 class="arsenal-hero-title">我的知識庫</h2>
+          <span class="arsenal-hero-sub">{{ ownedCards.length }} 張卡片已收錄</span>
+        </div>
+
         <!-- 資產行 -->
         <div class="arsenal-row-section">
           <div class="arsenal-row-header">
@@ -299,17 +310,24 @@
             <span class="arsenal-row-count">{{ assetCards.length }}</span>
           </div>
           <div class="arsenal-carousel-wrap">
-            <div v-if="assetCards.length > 0" class="carousel-track carousel-ltr">
-              <div
-                v-for="(card, idx) in [...assetCards, ...assetCards]"
+            <Swiper
+              v-if="assetCards.length > 0"
+              :slides-per-view="'auto'"
+              :space-between="12"
+              :loop="true"
+              :grab-cursor="true"
+              class="cards-swiper"
+            >
+              <SwiperSlide
+                v-for="(card, idx) in [...assetCards, ...assetCards, ...assetCards]"
                 :key="`asset-${idx}`"
-                class="carousel-card-item"
-                @click="idx < assetCards.length ? openFullCard(card.id) : null"
+                class="cards-swiper-slide"
+                @click="openFullCard(card.id)"
               >
                 <img :src="getCardImage(card)" :alt="card.name" class="carousel-card-img" />
                 <span class="carousel-card-name">{{ card.name }}</span>
-              </div>
-            </div>
+              </SwiperSlide>
+            </Swiper>
             <p v-else class="carousel-empty">尚無資產卡</p>
           </div>
         </div>
@@ -321,17 +339,24 @@
             <span class="arsenal-row-count">{{ techCards.length }}</span>
           </div>
           <div class="arsenal-carousel-wrap">
-            <div v-if="techCards.length > 0" class="carousel-track carousel-rtl">
-              <div
-                v-for="(card, idx) in [...techCards, ...techCards]"
+            <Swiper
+              v-if="techCards.length > 0"
+              :slides-per-view="'auto'"
+              :space-between="12"
+              :loop="true"
+              :grab-cursor="true"
+              class="cards-swiper"
+            >
+              <SwiperSlide
+                v-for="(card, idx) in [...techCards, ...techCards, ...techCards]"
                 :key="`tech-${idx}`"
-                class="carousel-card-item"
-                @click="idx < techCards.length ? openFullCard(card.id) : null"
+                class="cards-swiper-slide"
+                @click="openFullCard(card.id)"
               >
                 <img :src="getCardImage(card)" :alt="card.name" class="carousel-card-img" />
                 <span class="carousel-card-name">{{ card.name }}</span>
-              </div>
-            </div>
+              </SwiperSlide>
+            </Swiper>
             <p v-else class="carousel-empty">尚無技術卡</p>
           </div>
         </div>
@@ -343,17 +368,24 @@
             <span class="arsenal-row-count">{{ strategyCards.length }}</span>
           </div>
           <div class="arsenal-carousel-wrap">
-            <div v-if="strategyCards.length > 0" class="carousel-track carousel-ltr">
-              <div
-                v-for="(card, idx) in [...strategyCards, ...strategyCards]"
+            <Swiper
+              v-if="strategyCards.length > 0"
+              :slides-per-view="'auto'"
+              :space-between="12"
+              :loop="true"
+              :grab-cursor="true"
+              class="cards-swiper"
+            >
+              <SwiperSlide
+                v-for="(card, idx) in [...strategyCards, ...strategyCards, ...strategyCards]"
                 :key="`strat-${idx}`"
-                class="carousel-card-item"
-                @click="idx < strategyCards.length ? openFullCard(card.id) : null"
+                class="cards-swiper-slide"
+                @click="openFullCard(card.id)"
               >
                 <img :src="getCardImage(card)" :alt="card.name" class="carousel-card-img" />
                 <span class="carousel-card-name">{{ card.name }}</span>
-              </div>
-            </div>
+              </SwiperSlide>
+            </Swiper>
             <p v-else class="carousel-empty">尚無策略卡</p>
           </div>
         </div>
@@ -392,7 +424,7 @@
                   class="news-fan-card"
                   @click="openNewsDetail(news.id)"
                 >
-                  <img src="/images/cards/news-001.jpg" :alt="news.title" class="news-fan-img" />
+                  <img :src="`${BASE_URL}/images/cards/news-001.jpg`" :alt="news.title" class="news-fan-img" />
                   <span class="news-fan-title">{{ news.title }}</span>
                 </div>
               </div>
@@ -451,10 +483,7 @@
             @click="item.owned ? openFullCard(item.id) : openEncyclopediaCard(item.id)"
           >
             <!-- Mini card portrait preview -->
-            <div
-              class="encyclo-card-preview"
-              :class="{ 'preview-blurred': !item.owned }"
-            >
+            <div class="encyclo-card-preview">
               <div
                 class="mini-card mini-card-xs"
                 :style="{ '--accent': item.accentColor || '#3B82F6' }"
@@ -787,6 +816,7 @@
           </div>
 
           <div class="synth-ov-stage" ref="synthStageEl">
+            <!-- 第一排：材料卡 -->
             <div class="synth-ov-ingredients">
               <template v-for="(cardId, idx) in (currentRecipe?.ingredients ?? [])" :key="idx">
                 <div class="synth-ov-card-item" :class="`synth-ingr-${idx}`">
@@ -799,8 +829,9 @@
               </template>
             </div>
 
-            <div class="synth-ov-arrow-row">
-              <span class="synth-ov-arrow">→</span>
+            <!-- 第二排：融合結果卡 -->
+            <div class="synth-ov-result-row">
+              <span class="synth-ov-arrow">↓</span>
               <div class="synth-ov-result-area">
                 <div v-if="synthResultRevealed" class="synth-result-glow">
                   <MiniCard :card="getCard(currentRecipe?.result)" />
@@ -833,10 +864,11 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { gsap } from 'gsap'
+import Lenis from 'lenis'
+import { Swiper, SwiperSlide } from 'swiper/vue'
 import { useGameStore } from '../composables/useGameStore.js'
 import { TOPIC_LABELS, TYPE_LABELS } from '../data/combat.js'
 import MiniCard from './MiniCard.vue'
-// AssetCard imported for future use (currently displays as image via AssetCard.vue)
 import BattleFormula from './BattleFormula.vue'
 import FanHand from './FanHand.vue'
 import FullCardModal from './FullCardModal.vue'
@@ -860,11 +892,15 @@ const TABS = [
   { id: 'profile',      icon: '👤', label: '我的' },
 ]
 
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, '')
+
 const pointsEl         = ref(null)
 const mainEl           = ref(null)
 const combatSectionEl  = ref(null)
 const synthModuleEl    = ref(null)
 const synthStageEl     = ref(null)
+const resultSuccessEl  = ref(null)
+const resultPanelEl    = ref(null)
 const articleImgFailed = ref(false)
 const synthResultRevealed = ref(false)
 const now           = ref(Date.now())
@@ -876,10 +912,15 @@ const navShow   = ref(false)
 const navHidden = ref(false)
 let lastScrollY = 0
 
-// ── stack 虛擬滾動 ───────────────────────────────────────────────────────────
-const stackScrollerEl = ref(null)
-const stackScrollY    = ref(0)
-let stackTouchY = 0
+// ── stack snap scroll（GSAP 吸附動畫） ──────────────────────────────────────
+const stackScrollerEl  = ref(null)
+const stackScrollY     = ref(0)        // template 讀取，驅動 prevCardTransform
+const stackScrollTgt   = { value: 0 } // GSAP 動畫的目標物件
+const snapIndex        = ref(0)        // 目前吸附到第幾個位置（0=今日卡，1+=舊卡）
+let isSnapping   = false
+let accumWheel   = 0
+let stackTouchY  = 0
+let stackTouchDelta = 0
 
 // ── 主題色（依新聞 topic 動態變換）─────────────────────────────────────────
 const topicColors = {
@@ -965,9 +1006,9 @@ const canSynthesize = computed(() => {
 function getCard(id) { return state.cards.find(c => c.id === id) }
 
 function getCardImage(card) {
-  if (card.sponsor) return '/images/cards/figure-sponsored-001.jpg'
-  if (card.type === 'tech') return '/images/cards/assest-002.jpg'
-  return '/images/cards/assest-001.jpg'
+  if (card.sponsor) return `${BASE_URL}/images/cards/figure-sponsored-001.jpg`
+  if (card.type === 'tech') return `${BASE_URL}/images/cards/assest-002.jpg`
+  return `${BASE_URL}/images/cards/assest-001.jpg`
 }
 
 function isNewsEarned(newsId) {
@@ -1038,47 +1079,87 @@ function scrollToCombat() {
   combatSectionEl.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
+function goToArsenal() {
+  closeNewsDetail()
+  nextTick(() => { switchTab('arsenal') })
+}
+
 function switchTab(tabId) {
   state.activeTab = tabId
   mainEl.value?.scrollTo({ top: 0 })
   lastScrollY = 0
   navHidden.value = false
+  // 重置 stack
+  gsap.killTweensOf(stackScrollTgt)
+  stackScrollTgt.value = 0
   stackScrollY.value = 0
+  snapIndex.value = 0
+  isSnapping = false
+  accumWheel = 0
 }
 
-// ── stack 虛擬滾動 handlers ──────────────────────────────────────────────────
-function _stackMaxY() {
-  return PREV_NEWS.length * (stackScrollerEl.value?.clientHeight || 0)
-}
+// ── stack snap scroll handlers ────────────────────────────────────────────────
+function _stackH() { return stackScrollerEl.value?.clientHeight || 0 }
 
-function _stackUpdateNav(delta) {
-  if (delta > 8) navHidden.value = true
-  else if (delta < -8) navHidden.value = false
+function _snapTo(idx) {
+  const h = _stackH()
+  if (!h) return
+  const targetY = idx * h
+  isSnapping = true
+  gsap.killTweensOf(stackScrollTgt)
+  gsap.to(stackScrollTgt, {
+    value: targetY,
+    duration: 0.55,
+    ease: 'power4.out',
+    onUpdate() { stackScrollY.value = stackScrollTgt.value },
+    onComplete() {
+      snapIndex.value = idx
+      isSnapping = false
+      accumWheel = 0
+      stackTouchDelta = 0
+      navHidden.value = idx > 0
+    },
+  })
 }
 
 function onStackWheel(e) {
-  const prev = stackScrollY.value
-  stackScrollY.value = Math.max(0, Math.min(prev + e.deltaY, _stackMaxY()))
-  _stackUpdateNav(stackScrollY.value - prev)
-  lastScrollY = stackScrollY.value
+  if (isSnapping) return
+  accumWheel += e.deltaY
+  const threshold = _stackH() * 0.12 // 12% 觸發 snap
+  if (accumWheel > threshold && snapIndex.value < PREV_NEWS.length) {
+    _snapTo(snapIndex.value + 1)
+  } else if (accumWheel < -threshold && snapIndex.value > 0) {
+    _snapTo(snapIndex.value - 1)
+  }
 }
 
 function onStackTouchStart(e) {
   stackTouchY = e.touches[0].clientY
+  stackTouchDelta = 0
 }
 
 function onStackTouchMove(e) {
-  const delta = stackTouchY - e.touches[0].clientY
-  stackTouchY = e.touches[0].clientY
-  const prev = stackScrollY.value
-  stackScrollY.value = Math.max(0, Math.min(prev + delta, _stackMaxY()))
-  _stackUpdateNav(delta)
-  lastScrollY = stackScrollY.value
+  const dy = stackTouchY - e.touches[0].clientY
+  stackTouchDelta = dy
+  // 手指拖動時即時預覽位移
+  const h = _stackH()
+  const baseY = snapIndex.value * h
+  stackScrollTgt.value = Math.max(0, Math.min(baseY + dy, PREV_NEWS.length * h))
+  stackScrollY.value = stackScrollTgt.value
 }
 
-// 計算第 i 張舊卡（0-indexed）的 translateY
-// scroll 0→stackH: card i=0 從 translateY(100%) 滑至 0%
-// scroll stackH→2*stackH: card i=1 滑入，以此類推
+function onStackTouchEnd() {
+  const threshold = _stackH() * 0.12
+  if (stackTouchDelta > threshold && snapIndex.value < PREV_NEWS.length) {
+    _snapTo(snapIndex.value + 1)
+  } else if (stackTouchDelta < -threshold && snapIndex.value > 0) {
+    _snapTo(snapIndex.value - 1)
+  } else {
+    _snapTo(snapIndex.value) // 未達門檻，彈回
+  }
+}
+
+// 計算第 i 張舊卡的 translateY（stackScrollY 驅動）
 function prevCardTransform(i) {
   const h = stackScrollerEl.value?.clientHeight
   if (!h) return 'translateY(100%)'
@@ -1122,6 +1203,13 @@ function formatCooldown(ms) {
 watch(() => state.newsDetailMode, (mode) => {
   articleImgFailed.value = false
   if (!mode) navHidden.value = false
+})
+
+// 進入 result 階段時自動下滑到成功訊息
+watch(() => state.combatPhase, async (phase) => {
+  if (phase !== 'result') return
+  await nextTick()
+  resultSuccessEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 })
 
 // ── 積分動畫 ──────────────────────────────────────────────────────────────
@@ -1187,28 +1275,38 @@ watch(() => state.synthesisFeedback, (val) => {
   }
 })
 
+let lenis = null
+let lenisRafId = null
+
 onMounted(() => {
   gsap.from('.top-nav', { y: -60, opacity: 0, duration: 0.6, ease: 'power3.out' })
   nowInterval = setInterval(() => { now.value = Date.now() }, 1000)
 
-  // 讓 nav 在首次渲染後滑入（double rAF 確保 CSS transition 觸發）
   requestAnimationFrame(() => {
     requestAnimationFrame(() => { navShow.value = true })
   })
 
-  // 下滑隱藏 / 上滑顯示 nav（非 stack view 時才監聽 main-content）
+  // Lenis 平滑滾動（非 stack view 用）
   if (mainEl.value) {
-    mainEl.value.addEventListener('scroll', () => {
-      // stack view 有自己的 scroller，跳過
+    lenis = new Lenis({
+      wrapper: mainEl.value,
+      content: mainEl.value,
+      lerp: 0.12,
+      smoothWheel: true,
+    })
+
+    lenis.on('scroll', ({ scroll, direction }) => {
       if (state.activeTab === 'combat' && !state.newsDetailMode) return
-      const y = mainEl.value.scrollTop
-      if (y > lastScrollY + 8 && y > 60) {
-        navHidden.value = true
-      } else if (y < lastScrollY - 8) {
-        navHidden.value = false
-      }
-      lastScrollY = y
-    }, { passive: true })
+      if (direction > 0 && scroll > 60) navHidden.value = true
+      else if (direction < 0) navHidden.value = false
+      lastScrollY = scroll
+    })
+
+    const raf = (time) => {
+      lenis.raf(time)
+      lenisRafId = requestAnimationFrame(raf)
+    }
+    lenisRafId = requestAnimationFrame(raf)
   }
 })
 
@@ -1216,5 +1314,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (cooldownInterval) clearInterval(cooldownInterval)
   if (nowInterval) clearInterval(nowInterval)
+  if (lenisRafId) cancelAnimationFrame(lenisRafId)
+  lenis?.destroy()
 })
 </script>

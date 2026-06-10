@@ -75,10 +75,12 @@ const selectedCards = computed(() =>
 )
 
 const encyclopediaItems = computed(() =>
-  state.cards.map(c => ({
-    ...c,
-    quiz: QUIZZES.find(q => q.cardId === c.id) || null,
-  }))
+  state.cards
+    .filter(c => !c.owned)
+    .map(c => ({
+      ...c,
+      quiz: QUIZZES.find(q => q.cardId === c.id) || null,
+    }))
 )
 
 // ─── Actions ──────────────────────────────────────────────────────────────────

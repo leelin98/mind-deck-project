@@ -1,3 +1,4 @@
+@import 'swiper/css';
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -1087,22 +1088,22 @@ body::before {
   backdrop-filter: blur(4px);
   z-index: 200;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   padding: 16px;
 }
 .modal-panel {
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
+  max-width: 440px;
   background: var(--surface);
-  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-lg) var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1.5px solid var(--border);
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: relative;
-  max-height: 88dvh;
+  max-height: 80dvh;
   overflow-y: auto;
 }
 .modal-close { position: absolute; top: 14px; right: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 12px; color: var(--text-mute); }
@@ -1170,7 +1171,7 @@ body::before {
   overflow: hidden;
   transition: filter 0.2s;
 }
-.encyclo-card-preview.preview-blurred { filter: blur(4px) brightness(0.9); }
+/* preview-blurred 已移除 */
 
 /* MiniCard 超小版（供百科列表使用）*/
 .mini-card.mini-card-xs {
@@ -1797,15 +1798,18 @@ body::before {
 .synth-ov-desc { font-size: 12px; color: var(--text-mute); margin-top: 4px; line-height: 1.5; }
 .synth-ov-stage {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 12px;
+  width: 100%;
 }
 .synth-ov-ingredients {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   flex-wrap: nowrap;
+  width: 100%;
 }
 .synth-ov-card-item { flex-shrink: 0; }
 .synth-ov-plus {
@@ -1815,11 +1819,12 @@ body::before {
   flex-shrink: 0;
   line-height: 1;
 }
-.synth-ov-arrow-row {
+/* 融合結果：獨立第二排 */
+.synth-ov-result-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 6px;
 }
 .synth-ov-arrow {
   font-size: 22px;
@@ -1916,12 +1921,10 @@ body::before {
   overflow: hidden;
   cursor: pointer;
   background: var(--card-bg, linear-gradient(135deg, #F97316 0%, #FBBF24 100%));
-  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.2s;
 }
-.stack-card:active { box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.stack-card:active { opacity: 0.92; }
 
 .stack-bg-img {
   position: absolute;
@@ -2057,22 +2060,48 @@ body::before {
   padding: 16px 0 14px;
 }
 
+/* 知識庫大標 */
+.arsenal-hero {
+  padding: 20px 20px 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.arsenal-hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.arsenal-hero-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
 .arsenal-row-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 16px 12px;
+  gap: 10px;
+  padding: 16px 20px 10px;
+  border-top: 1px solid var(--border);
 }
 .arsenal-row-label {
   font-family: 'Syne', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 .arsenal-row-count {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
   color: var(--text-mute);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 20px;
 }
 
 /* ── 輪播容器 ──────────────────────────────────────────────────── */
@@ -2080,6 +2109,26 @@ body::before {
   overflow: hidden;
   width: 100%;
   padding: 4px 0;
+}
+
+/* Swiper 輪播 */
+.cards-swiper {
+  width: 100%;
+  padding: 4px 16px 12px !important;
+  overflow: visible;
+}
+.cards-swiper-slide {
+  width: 92px !important;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.cards-swiper-slide:active .carousel-card-img {
+  transform: scale(0.95);
+  box-shadow: var(--shadow-sm);
 }
 
 @keyframes carouselLTR {
