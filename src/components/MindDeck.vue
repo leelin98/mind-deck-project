@@ -47,35 +47,34 @@
               :style="{ '--card-bg': topicColors[state.todayNews?.topic] || 'linear-gradient(135deg,#F97316,#FBBF24)', zIndex: 1 }"
               @click="openNewsDetail(state.todayNews.id)"
             >
-              <img
-                v-if="state.todayNews?.image"
-                :src="state.todayNews.image"
-                class="stack-bg-img"
-                :alt="state.todayNews.title"
-                @error="$event.target.style.display='none'"
-              />
-              <div class="stack-card-inner">
-                <div class="stack-card-top">
-                  <span class="stack-badge today-badge">今日挑戰</span>
+              <div class="stack-hero">
+                <img
+                  v-if="state.todayNews?.image"
+                  :src="`${BASE_URL}${state.todayNews.image}`"
+                  class="stack-hero-img"
+                  :alt="state.todayNews.title"
+                  @error="$event.target.style.display='none'"
+                />
+                <div class="stack-hero-overlay"></div>
+                <span class="stack-badge today-badge stack-hero-badge">今日挑戰</span>
+              </div>
+              <div class="stack-card-body">
+                <div class="stack-card-meta">
                   <span class="stack-source">{{ state.todayNews.source }}</span>
+                  <span class="stack-pts-pill">{{ state.todayNews.difficulty }} pts</span>
                 </div>
-                <div class="stack-card-bottom">
-                  <div class="stack-tags">
-                    <span v-for="tag in (state.todayNews?.tags || [])" :key="tag" class="stack-tag">{{ tag }}</span>
-                  </div>
-                  <h2 class="stack-title">{{ state.todayNews.title }}</h2>
-                  <p class="stack-sub">{{ state.todayNews.subtitle }}</p>
-                  <div class="stack-footer">
-                    <span class="stack-diff">{{ state.todayNews.difficulty }} pts</span>
-                    <span class="stack-cta">開始挑戰 →</span>
-                  </div>
+                <div class="stack-tags">
+                  <span v-for="tag in (state.todayNews?.tags || [])" :key="tag" class="stack-tag">{{ tag }}</span>
                 </div>
+                <h2 class="stack-title">{{ state.todayNews.title }}</h2>
+                <p class="stack-sub">{{ state.todayNews.subtitle }}</p>
+                <span class="stack-cta">開始挑戰 →</span>
               </div>
             </div>
 
-            <!-- 過往新聞卡（從下方滑入覆蓋今日卡，z-index 依序疊高） -->
+            <!-- 過往新聞卡（從下方滑入覆蓋今日卡，z-index 依序疊高，通關後不顯示） -->
             <div
-              v-for="(news, i) in PREV_NEWS"
+              v-for="(news, i) in stackPrevNews"
               :key="news.id"
               class="stack-card"
               :style="{
@@ -85,33 +84,32 @@
               }"
               @click="openNewsDetail(news.id)"
             >
-              <img
-                v-if="news.image"
-                :src="news.image"
-                class="stack-bg-img"
-                :alt="news.title"
-                @error="$event.target.style.display='none'"
-              />
-              <div class="stack-card-inner">
-                <div class="stack-card-top">
-                  <span v-if="isNewsEarned(news.id)" class="stack-badge earned-badge">✦ 已獲得</span>
-                  <span v-else-if="getNewsLockRemaining(news.id) > 0" class="stack-badge locked-badge">
-                    🔒 {{ formatLock(getNewsLockRemaining(news.id)) }}
-                  </span>
-                  <span v-else class="stack-badge pending-badge">尚未獲得</span>
+              <div class="stack-hero">
+                <img
+                  v-if="news.image"
+                  :src="`${BASE_URL}${news.image}`"
+                  class="stack-hero-img"
+                  :alt="news.title"
+                  @error="$event.target.style.display='none'"
+                />
+                <div class="stack-hero-overlay"></div>
+                <span class="stack-badge stack-hero-badge"
+                  :class="getNewsLockRemaining(news.id) > 0 ? 'locked-badge' : 'pending-badge'"
+                >
+                  {{ getNewsLockRemaining(news.id) > 0 ? `🔒 ${formatLock(getNewsLockRemaining(news.id))}` : '未挑戰' }}
+                </span>
+              </div>
+              <div class="stack-card-body">
+                <div class="stack-card-meta">
                   <span class="stack-source">{{ news.source }}</span>
+                  <span class="stack-pts-pill">{{ news.difficulty }} pts</span>
                 </div>
-                <div class="stack-card-bottom">
-                  <div class="stack-tags">
-                    <span v-for="tag in (news.tags || [])" :key="tag" class="stack-tag">{{ tag }}</span>
-                  </div>
-                  <h2 class="stack-title">{{ news.title }}</h2>
-                  <p class="stack-sub">{{ news.subtitle }}</p>
-                  <div class="stack-footer">
-                    <span class="stack-diff">{{ news.difficulty }} pts</span>
-                    <span class="stack-date">{{ news.date }}</span>
-                  </div>
+                <div class="stack-tags">
+                  <span v-for="tag in (news.tags || [])" :key="tag" class="stack-tag">{{ tag }}</span>
                 </div>
+                <h2 class="stack-title">{{ news.title }}</h2>
+                <p class="stack-sub">{{ news.subtitle }}</p>
+                <span class="stack-date">{{ news.date }}</span>
               </div>
             </div>
 
@@ -172,8 +170,8 @@
               <p class="combat-completed-sub">再次挑戰看看！</p>
             </div>
 
-            <!-- 出牌區（永遠可出戰） -->
-            <div class="fan-stage">
+            <!-- 出牌區（archived 新聞不顯示）-->
+            <div v-if="!state.activeNews?.archived" class="fan-stage">
               <div class="fan-stage-header">
                 <span class="fan-stage-label">選擇 3 張資產卡出戰</span>
                 <span class="fan-stage-count">{{ selectedCardIds.length }}/3</span>
@@ -298,9 +296,9 @@
       <section v-else-if="state.activeTab === 'arsenal'" class="arsenal-tab">
 
         <!-- 知識庫大標 -->
-        <div class="arsenal-hero">
-          <h2 class="arsenal-hero-title">我的知識庫</h2>
-          <span class="arsenal-hero-sub">{{ ownedCards.length }} 張卡片已收錄</span>
+        <div class="section-title-row arsenal-section-title">
+          <h2 class="section-title">我的知識庫</h2>
+          <span class="section-sub">{{ ownedCards.length }} 張卡片已收錄</span>
         </div>
 
         <!-- 資產行 -->
@@ -312,10 +310,13 @@
           <div class="arsenal-carousel-wrap">
             <Swiper
               v-if="assetCards.length > 0"
+              :modules="[Autoplay]"
               :slides-per-view="'auto'"
               :space-between="12"
               :loop="true"
               :grab-cursor="true"
+              :autoplay="{ delay: 0, disableOnInteraction: false, reverseDirection: false }"
+              :speed="3000"
               class="cards-swiper"
             >
               <SwiperSlide
@@ -341,10 +342,13 @@
           <div class="arsenal-carousel-wrap">
             <Swiper
               v-if="techCards.length > 0"
+              :modules="[Autoplay]"
               :slides-per-view="'auto'"
               :space-between="12"
               :loop="true"
               :grab-cursor="true"
+              :autoplay="{ delay: 0, disableOnInteraction: false, reverseDirection: true }"
+              :speed="3000"
               class="cards-swiper"
             >
               <SwiperSlide
@@ -370,10 +374,13 @@
           <div class="arsenal-carousel-wrap">
             <Swiper
               v-if="strategyCards.length > 0"
+              :modules="[Autoplay]"
               :slides-per-view="'auto'"
               :space-between="12"
               :loop="true"
               :grab-cursor="true"
+              :autoplay="{ delay: 0, disableOnInteraction: false, reverseDirection: false }"
+              :speed="3000"
               class="cards-swiper"
             >
               <SwiperSlide
@@ -422,7 +429,7 @@
                   v-for="(news, idx) in cards"
                   :key="news.id"
                   class="news-fan-card"
-                  @click="openNewsDetail(news.id)"
+                  @click="openNewsCardPreview(news)"
                 >
                   <img :src="`${BASE_URL}/images/cards/news-001.jpg`" :alt="news.title" class="news-fan-img" />
                   <span class="news-fan-title">{{ news.title }}</span>
@@ -793,6 +800,22 @@
       </div>
     </Transition>
 
+    <!-- ── 新聞卡預覽 Modal ── -->
+    <Transition name="modal">
+      <div v-if="state.newsCardPreview" class="modal-overlay" @click.self="closeNewsCardPreview">
+        <div class="news-card-preview-modal">
+          <button class="modal-close" @click="closeNewsCardPreview">✕</button>
+          <img
+            :src="`${BASE_URL}/images/cards/news-001.jpg`"
+            :alt="state.newsCardPreview.news.title"
+            class="news-card-preview-img"
+            @click="goToNewsFromCard(state.newsCardPreview.news)"
+          />
+          <p class="news-card-preview-hint">點擊卡片進入新聞</p>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── 資產全卡 Modal ── -->
     <Transition name="modal">
       <FullCardModal
@@ -866,6 +889,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { gsap } from 'gsap'
 import Lenis from 'lenis'
 import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay } from 'swiper/modules'
 import { useGameStore } from '../composables/useGameStore.js'
 import { TOPIC_LABELS, TYPE_LABELS } from '../data/combat.js'
 import MiniCard from './MiniCard.vue'
@@ -881,6 +905,7 @@ const {
   startCombat, submitAntidote, resetCombat,
   openTermCard, startTermQuiz, answerTermCard, submitTermCard, closeTermCard,
   openEncyclopediaCard, answerEncyclopediaQuiz, closeEncyclopediaModal,
+  openNewsCardPreview, closeNewsCardPreview,
   openFullCard, closeFullCard,
   openSynthesisModal, triggerSynthesisAnimate, completeSynthesis, closeSynthModal,
 } = useGameStore()
@@ -959,6 +984,9 @@ const parsedArticle = computed(() => {
 
 // ── 已選卡片 IDs（給 FanHand 用）────────────────────────────────────────
 const selectedCardIds = computed(() => state.selectedSlots.filter(id => id !== null))
+
+// ── 過往新聞（過濾已通關） ─────────────────────────────────────────────
+const stackPrevNews = computed(() => PREV_NEWS.filter(n => !isNewsEarned(n.id)))
 
 // ── Arsenal 分類 ──────────────────────────────────────────────────────
 const assetCards    = computed(() => ownedCards.value.filter(c => c.type === 'asset'))
@@ -1084,6 +1112,12 @@ function goToArsenal() {
   nextTick(() => { switchTab('arsenal') })
 }
 
+function goToNewsFromCard(news) {
+  closeNewsCardPreview()
+  switchTab('combat')
+  nextTick(() => { openNewsDetail(news.id) })
+}
+
 function switchTab(tabId) {
   state.activeTab = tabId
   mainEl.value?.scrollTo({ top: 0 })
@@ -1117,7 +1151,7 @@ function _snapTo(idx) {
       isSnapping = false
       accumWheel = 0
       stackTouchDelta = 0
-      navHidden.value = idx > 0
+      // stack view 的 nav 永遠保持可見
     },
   })
 }
@@ -1126,7 +1160,7 @@ function onStackWheel(e) {
   if (isSnapping) return
   accumWheel += e.deltaY
   const threshold = _stackH() * 0.12 // 12% 觸發 snap
-  if (accumWheel > threshold && snapIndex.value < PREV_NEWS.length) {
+  if (accumWheel > threshold && snapIndex.value < stackPrevNews.value.length) {
     _snapTo(snapIndex.value + 1)
   } else if (accumWheel < -threshold && snapIndex.value > 0) {
     _snapTo(snapIndex.value - 1)
@@ -1144,13 +1178,13 @@ function onStackTouchMove(e) {
   // 手指拖動時即時預覽位移
   const h = _stackH()
   const baseY = snapIndex.value * h
-  stackScrollTgt.value = Math.max(0, Math.min(baseY + dy, PREV_NEWS.length * h))
+  stackScrollTgt.value = Math.max(0, Math.min(baseY + dy, stackPrevNews.value.length * h))
   stackScrollY.value = stackScrollTgt.value
 }
 
 function onStackTouchEnd() {
   const threshold = _stackH() * 0.12
-  if (stackTouchDelta > threshold && snapIndex.value < PREV_NEWS.length) {
+  if (stackTouchDelta > threshold && snapIndex.value < stackPrevNews.value.length) {
     _snapTo(snapIndex.value + 1)
   } else if (stackTouchDelta < -threshold && snapIndex.value > 0) {
     _snapTo(snapIndex.value - 1)

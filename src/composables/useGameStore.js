@@ -1,6 +1,6 @@
 import { reactive, computed } from 'vue'
 import { CARDS, SYNTHESIS_RECIPES } from '../data/cards.js'
-import { ALL_NEWS, NEWS_CARDS, COMBAT_FORMULA, TOPIC_LABELS, TYPE_LABELS, PREV_NEWS } from '../data/combat.js'
+import { ALL_NEWS, NEWS_CARDS, COMBAT_FORMULA, TOPIC_LABELS, TYPE_LABELS, PREV_NEWS, ARCHIVED_NEWS } from '../data/combat.js'
 import { QUIZZES } from '../data/quizzes.js'
 
 // ─── Singleton state ──────────────────────────────────────────────────────────
@@ -53,8 +53,11 @@ const state = reactive({
 
   // 新聞鎖定（key: newsId, value: 解鎖時間 ms）
   newsLocks: {},
-  // 贏得的新聞卡
-  earnedNewsCards: [],
+  // 贏得的新聞卡（預設收錄四五月歸檔新聞）
+  earnedNewsCards: ARCHIVED_NEWS.map(n => ({ ...n, earnedAt: 0 })),
+
+  // 新聞卡預覽 Modal
+  newsCardPreview: null, // { news }
 
   // Active view
   activeTab: 'combat',
@@ -281,6 +284,16 @@ function closeEncyclopediaModal() {
   state.encyclopediaModal = null
 }
 
+// ── 新聞卡預覽 Modal ──────────────────────────────────────────────────────────
+
+function openNewsCardPreview(news) {
+  state.newsCardPreview = { news }
+}
+
+function closeNewsCardPreview() {
+  state.newsCardPreview = null
+}
+
 // ── 我的資產 Full Card Modal ──────────────────────────────────────────────────
 
 function openFullCard(cardId) {
@@ -380,6 +393,8 @@ export function useGameStore() {
     openEncyclopediaCard,
     answerEncyclopediaQuiz,
     closeEncyclopediaModal,
+    openNewsCardPreview,
+    closeNewsCardPreview,
     openFullCard,
     closeFullCard,
     openSynthesisModal,
