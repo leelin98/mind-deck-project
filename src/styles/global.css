@@ -441,6 +441,11 @@ body::before {
   position: sticky;
   top: 0;
   z-index: 50;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* 下滑隱藏、上滑出現（與 bottom-nav 同步用 navHidden 控制） */
+.detail-nav.detail-nav-hidden {
+  transform: translateY(-110%);
 }
 .detail-back-btn {
   background: none;
@@ -2524,6 +2529,9 @@ body::before {
 /* ─── Encyclopedia Modal（百科 encq-* 元件）────────────────────── */
 .encq-panel {
   gap: 14px;
+  /* 關閉鈕掛在面板外角，需可見溢出（題目內容短，不需內捲動） */
+  overflow: visible;
+  max-height: none;
 }
 
 /* 重設計 Modal 標頭 */
@@ -2566,17 +2574,17 @@ body::before {
   flex-shrink: 0;
   white-space: nowrap;
 }
-/* 百科 modal 圓形關閉按鈕 */
+/* 百科 modal 圓形關閉按鈕（與大卡片 .fcard-simple-close 同樣式，掛在面板外角） */
 .encq-close-x-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: -12px;
+  right: -12px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-mute);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: white;
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -2609,10 +2617,29 @@ body::before {
 .encyclopedia-grid-item:active {
   transform: scale(0.97);
 }
+.grid-card-img-wrap {
+  position: relative;
+  width: 100%;
+}
 .grid-card-img {
   width: 100%;
   height: auto;
   border-radius: var(--radius-sm);
+  display: block;
+}
+/* 未擁有：灰階壓暗＋鎖頭 */
+.encyclopedia-grid-item.locked .grid-card-img {
+  filter: grayscale(0.85);
+  opacity: 0.55;
+}
+.grid-card-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 .grid-card-num {
   font-size: 10px;

@@ -245,10 +245,15 @@ function closeTermCard() {
 function openEncyclopediaCard(cardId) {
   const card = state.cards.find(c => c.id === cardId)
   if (!card) return
+  // 已擁有：直接顯示整張卡（與知識庫一致）
+  if (card.owned) {
+    openFullCard(cardId)
+    return
+  }
   const quiz = QUIZZES.find(q => q.cardId === cardId)
-  // mode：已擁有=review、未擁有有題目=unlock、未擁有無題目=locked（顯示解鎖提示）
-  const mode = card.owned ? 'review' : quiz ? 'unlock' : 'locked'
-  const cooldownEnd = mode === 'review' ? (state.quizCooldowns[cardId] ?? null) : null
+  // mode：有題目=unlock（答題解鎖）、無題目=locked（顯示解鎖提示）
+  const mode = quiz ? 'unlock' : 'locked'
+  const cooldownEnd = state.quizCooldowns[cardId] ?? null
   state.encyclopediaModal = { card, quiz, mode, answer: null, cooldownEnd }
 }
 
@@ -261,16 +266,14 @@ function answerEncyclopediaQuiz(optionLabel) {
   )?.correct
 
   if (correct) {
-    if (state.encyclopediaModal.mode === 'unlock') {
-      const card = state.cards.find(c => c.id === state.encyclopediaModal.card.id)
-      if (card) card.owned = true
-      state.points += 10
-    }
+    const card = state.cards.find(c => c.id === state.encyclopediaModal.card.id)
+    if (card) card.owned = true
+    state.points += 10
     delete state.quizCooldowns[state.encyclopediaModal.card.id]
     state.encyclopediaModal.cooldownEnd = null
-  } else if (state.encyclopediaModal.mode === 'review') {
-    // 複習答錯：設定冷卻 30 秒（demo；實際可改 5*60*1000）
-    const cooldownEnd = Date.now() + 30 * 1000
+  } else {
+    // 答錯：鎖定 30 分鐘無法作答（仍可開啟查看題目）
+    const cooldownEnd = Date.now() + 30 * 60 * 1000
     state.quizCooldowns[state.encyclopediaModal.card.id] = cooldownEnd
     state.encyclopediaModal.cooldownEnd = cooldownEnd
   }

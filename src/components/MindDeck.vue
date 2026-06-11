@@ -183,7 +183,7 @@
 
           <!-- 新聞詳細頁 -->
           <div v-else class="news-detail-view">
-            <div class="detail-nav">
+            <div class="detail-nav" :class="{ 'detail-nav-hidden': navHidden }">
               <button class="detail-back-btn" @click="closeNewsDetail">
                 ← 返回
               </button>
@@ -355,7 +355,7 @@
                     >
                   </div>
                   <button class="btn-secondary" @click="goToArsenal">
-                    去我的知識庫 →
+                    看新卡片 →
                   </button>
                 </div>
               </div>
@@ -693,14 +693,17 @@
               v-for="(item, idx) in encyclopediaItems"
               :key="item.id"
               class="encyclopedia-grid-item"
-              :class="{ owned: item.owned }"
+              :class="{ owned: item.owned, locked: !item.owned }"
               @click="openEncyclopediaCard(item.id)"
             >
-              <img
-                :src="getCardImage(item)"
-                :alt="item.name"
-                class="grid-card-img"
-              />
+              <div class="grid-card-img-wrap">
+                <img
+                  :src="getCardImage(item)"
+                  :alt="item.name"
+                  class="grid-card-img"
+                />
+                <span v-if="!item.owned" class="grid-card-lock">🔒</span>
+              </div>
               <span class="grid-card-num"
                 >#{{ String(idx + 1).padStart(3, "0") }}</span
               >
@@ -805,15 +808,55 @@
 
           <!-- UNLOCK 模式：鎖定卡片答題解鎖 -->
           <template v-if="state.encyclopediaModal.mode === 'unlock'">
+            <p class="modal-tag">答題解鎖挑戰</p>
             <p v-if="state.encyclopediaModal.quiz?.teaser" class="encq-teaser">
               {{ state.encyclopediaModal.quiz.teaser }}
             </p>
 
-            <template v-if="!state.encyclopediaModal.answer">
-              <p class="modal-tag">答題解鎖任務</p>
-              <h3 class="modal-q">
-                {{ state.encyclopediaModal.quiz?.scenario }}
-              </h3>
+            <h3 class="modal-q">
+              {{ state.encyclopediaModal.quiz?.scenario }}
+            </h3>
+
+            <!-- 冷卻中（重新打開時）：題目可看，但選項鎖定 -->
+            <template
+              v-if="
+                !state.encyclopediaModal.answer &&
+                state.encyclopediaModal.cooldownEnd &&
+                cooldownRemaining > 0
+              "
+            >
+              <div class="modal-options">
+                <button
+                  v-for="opt in state.encyclopediaModal.quiz?.options"
+                  :key="opt.label"
+                  class="modal-opt"
+                  disabled
+                >
+                  <span class="opt-label">{{ opt.label }}</span>
+                  <span class="opt-text">{{ opt.text }}</span>
+                </button>
+              </div>
+              <p class="encq-cooldown-note">
+                ⏳ 答錯鎖定中，{{ formatCooldown(cooldownRemaining) }}
+                後可重新作答
+              </p>
+              <a
+                :href="
+                  state.encyclopediaModal.quiz?.recommendedReading?.url ||
+                  'https://www.digitimes.com.tw/'
+                "
+                target="_blank"
+                class="btn-antidote puffy-btn encq-reading-btn"
+              >
+                📖 推薦閱讀：{{
+                  state.encyclopediaModal.quiz?.recommendedReading?.title ||
+                  "相關文章"
+                }}
+              </a>
+            </template>
+
+            <!-- 未作答 -->
+            <template v-else-if="!state.encyclopediaModal.answer">
               <div class="modal-options">
                 <button
                   v-for="opt in state.encyclopediaModal.quiz?.options"
@@ -827,6 +870,7 @@
               </div>
             </template>
 
+            <!-- 已作答 -->
             <div v-else class="modal-feedback">
               <template
                 v-if="
@@ -841,72 +885,29 @@
                 <p class="feedback-reward">
                   🎴 {{ state.encyclopediaModal.quiz.reward }}
                 </p>
-                <button class="btn-secondary" @click="closeEncyclopediaModal">
-                  關閉
-                </button>
               </template>
               <template v-else>
                 <p class="feedback-wrong">
                   {{ state.encyclopediaModal.quiz?.failMessage }}
                 </p>
-                <button
-                  class="btn-secondary"
-                  @click="state.encyclopediaModal.answer = null"
+                <p class="encq-cooldown-note">
+                  已鎖定 30 分鐘，期間可閱讀推薦文章再回來挑戰。
+                </p>
+                <a
+                  :href="
+                    state.encyclopediaModal.quiz?.recommendedReading?.url ||
+                    'https://www.digitimes.com.tw/'
+                  "
+                  target="_blank"
+                  class="btn-antidote puffy-btn encq-reading-btn"
                 >
-                  重新作答
-                </button>
+                  📖 推薦閱讀：{{
+                    state.encyclopediaModal.quiz?.recommendedReading?.title ||
+                    "相關文章"
+                  }}
+                </a>
               </template>
             </div>
-          </template>
-
-          <!-- REVIEW 模式：已解鎖，顯示完整卡片資訊 -->
-          <template v-else-if="state.encyclopediaModal.mode === 'review'">
-            <div class="encq-card-detail">
-              <img
-                :src="getCardImage(state.encyclopediaModal.card)"
-                :alt="state.encyclopediaModal.card.name"
-                class="encq-detail-img"
-              />
-              <div>
-                <h3 class="encq-detail-name">
-                  {{ state.encyclopediaModal.card.name }}
-                </h3>
-                <p class="encq-detail-name-en">
-                  {{ state.encyclopediaModal.card.nameEn }}
-                </p>
-              </div>
-              <p class="encq-detail-desc">
-                {{ state.encyclopediaModal.card.description }}
-              </p>
-              <div class="encq-detail-tags">
-                <span
-                  v-for="t in state.encyclopediaModal.card.tags"
-                  :key="t"
-                  class="tag-chip small"
-                  >{{ t }}</span
-                >
-              </div>
-              <div class="encq-detail-stats">
-                <span
-                  class="type-badge"
-                  :class="`type-${state.encyclopediaModal.card.type}`"
-                >
-                  {{ TYPE_LABELS[state.encyclopediaModal.card.type] }}
-                </span>
-                <span class="topic-badge"
-                  >擅長
-                  {{
-                    TOPIC_LABELS[state.encyclopediaModal.card.strongTopic]
-                  }}</span
-                >
-                <span class="encq-detail-power"
-                  >PWR {{ state.encyclopediaModal.card.power }}</span
-                >
-              </div>
-            </div>
-            <button class="btn-secondary" @click="closeEncyclopediaModal">
-              關閉
-            </button>
           </template>
 
           <!-- LOCKED 模式：未擁有且無題目，顯示解鎖提示 -->
@@ -930,13 +931,10 @@
                 {{
                   state.encyclopediaModal.card.synthesized
                     ? "此卡需透過「資產進化艙」融合解鎖"
-                    : "完成新聞挑戰即可解鎖此卡"
+                    : "答題挑戰即將開放，敬請期待"
                 }}
               </p>
             </div>
-            <button class="btn-secondary" @click="closeEncyclopediaModal">
-              關閉
-            </button>
           </template>
         </div>
       </div>
@@ -1048,7 +1046,6 @@ import Lenis from "lenis";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Autoplay } from "swiper/modules";
 import { useGameStore } from "../composables/useGameStore.js";
-import { TOPIC_LABELS, TYPE_LABELS } from "../data/combat.js";
 import MiniCard from "./MiniCard.vue";
 import BattleFormula from "./BattleFormula.vue";
 import FanHand from "./FanHand.vue";
