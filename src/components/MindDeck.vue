@@ -772,7 +772,10 @@
     <!-- ── 置底漂浮選單 ── -->
     <nav
       class="bottom-nav"
-      :class="{ 'nav-show': navShow, 'nav-hidden': navHidden || anyModalOpen }"
+      :class="{
+        'nav-show': navShow,
+        'nav-hidden': navHidden || anyModalOpen || !!state.newsDetailMode,
+      }"
     >
       <div class="bottom-nav-inner">
         <button
