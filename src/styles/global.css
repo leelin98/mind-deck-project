@@ -1,6 +1,6 @@
 @import "swiper/css";
 @import "swiper/css/autoplay";
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap");
 
 /* ════════════════════════════════════════════════════════════════════════
  * 主題色票 — 改這裡就能整體換色
@@ -10,13 +10,13 @@
  * ════════════════════════════════════════════════════════════════════════ */
 :root {
   /* ── 主要品牌色（換色改這三行）──────────────────────────────── */
-  --primary: #be185d; /* 深粉：按鈕主色、品牌文字 */
-  --primary-mid: #ec4899; /* 中粉：hover、border */
+  --primary: #ec4899; /* 泡泡粉（KV 主色）：按鈕主色、品牌文字 */
+  --primary-mid: #f472b6; /* 中粉：hover、border */
   --primary-light: #fdf2f8; /* 淺粉：背景 chip */
   --primary-border: #fbcfe8; /* tag border */
 
   /* ── Accent（通常不改）─────────────────────────────────────── */
-  --accent-o: #f97316; /* 橘：高亮、解藥按鈕 */
+  --accent-o: #fb923c; /* 亮橘（KV 點綴）：高亮、解藥按鈕 */
   --accent-g: #10b981; /* 綠：成功狀態 */
 
   /* ── 相容別名（舊 code 直接沿用，自動繼承 primary）──────────── */
@@ -67,7 +67,9 @@ html {
   overflow: hidden; /* 防止整頁捲動，讓捲動限在 main-content 內 */
 }
 body {
-  background: var(--bg);
+  /* KV 背景：上淡橘漸層到下白 */
+  background: linear-gradient(180deg, #ffeecb 0%, #fff8ee 55%, #ffffff 100%)
+    fixed;
   color: var(--text);
   font-family: "Noto Sans TC", sans-serif;
   height: 100%;
@@ -116,17 +118,17 @@ body::before {
   align-items: center;
   gap: 8px;
 }
-.brand-icon {
-  font-size: 22px;
-  color: #ec4899;
+.brand-icon-img {
+  height: 30px;
+  width: auto;
+  display: block;
 }
-.brand-text {
-  font-family: "Syne", sans-serif;
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 0.06em;
-  color: #ec4899;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+/* logo.png 為方形畫布、字條置中，放大高度讓字夠大（上下透明區溢出 nav 無妨）*/
+.brand-logo-img {
+  height: 64px;
+  width: auto;
+  display: block;
+  margin: -16px 0;
 }
 .nav-user {
   display: flex;
@@ -134,7 +136,6 @@ body::before {
   gap: 8px;
 }
 .user-id {
-  font-family: "DM Mono", monospace;
   font-size: 12px;
   color: var(--text-mute);
 }
@@ -142,21 +143,21 @@ body::before {
   display: flex;
   align-items: center;
   gap: 5px;
+  height: 30px;
   background: rgba(255, 255, 255, 0.6);
   border: 1.5px solid rgba(255, 255, 255, 0.8);
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 0 12px;
   backdrop-filter: blur(8px);
 }
 .points-icon {
-  color: #be185d;
+  color: var(--primary);
   font-size: 13px;
 }
 .points-value {
-  font-family: "DM Mono", monospace;
   font-weight: 700;
-  font-size: 14px;
-  color: #be185d;
+  font-size: 13px;
+  color: var(--primary);
   display: inline-block;
 }
 
@@ -173,6 +174,10 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+/* 新聞詳細頁：移除底部 padding，讓手牌裁切線貼齊螢幕底 */
+.main-content.main-flush-bottom {
+  padding-bottom: 0;
 }
 
 /* ─── Bottom Floating Nav ────────────────────────────────────────── */
@@ -201,9 +206,6 @@ body::before {
   -webkit-backdrop-filter: blur(20px);
   border: 2px solid #fbcfe8;
   border-radius: 999px;
-  box-shadow:
-    0 8px 32px rgba(190, 24, 93, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   padding: 4px 8px;
 }
@@ -226,19 +228,8 @@ body::before {
   background: #fdf2f8;
 }
 .bottom-tab-btn.active {
-  color: #be185d;
+  color: var(--primary);
   background: #fdf2f8;
-}
-.bottom-tab-btn.active::after {
-  content: "";
-  position: absolute;
-  bottom: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 2.5px;
-  background: #ec4899;
-  border-radius: 999px;
 }
 .bottom-tab-icon {
   font-size: 20px;
@@ -259,7 +250,6 @@ body::before {
 }
 
 .news-list-label {
-  font-family: "DM Mono", monospace;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -306,7 +296,6 @@ body::before {
   mix-blend-mode: multiply;
 }
 .news-badge {
-  font-family: "DM Mono", monospace;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -327,7 +316,6 @@ body::before {
   gap: 8px;
 }
 .news-title {
-  font-family: "Syne", sans-serif;
   font-size: 20px;
   font-weight: 800;
   color: var(--text);
@@ -344,12 +332,10 @@ body::before {
 }
 .diff-label {
   font-size: 11px;
-  font-family: "DM Mono", monospace;
   color: var(--text-mute);
   letter-spacing: 0.08em;
 }
 .diff-value {
-  font-family: "DM Mono", monospace;
   font-size: 13px;
   font-weight: 500;
   color: var(--accent-o);
@@ -362,7 +348,6 @@ body::before {
   padding-top: 4px;
 }
 .today-news-cta {
-  font-family: "Syne", sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--cobalt);
@@ -417,7 +402,6 @@ body::before {
   gap: 2px;
 }
 .prev-news-date {
-  font-family: "DM Mono", monospace;
   font-size: 10px;
   color: var(--text-mute);
 }
@@ -462,7 +446,6 @@ body::before {
   background: none;
   border: none;
   color: var(--cobalt);
-  font-family: "Syne", sans-serif;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -472,7 +455,6 @@ body::before {
 .detail-nav-label {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -510,17 +492,14 @@ body::before {
   font-size: 11px;
   font-weight: 700;
   color: var(--cobalt);
-  font-family: "DM Mono", monospace;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .article-date {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .article-title {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--text);
@@ -575,7 +554,6 @@ body::before {
   border: none;
   border-top: 1px solid var(--border);
   color: var(--cobalt);
-  font-family: "Syne", sans-serif;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -627,7 +605,6 @@ body::before {
   gap: 10px;
 }
 .section-title {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--cobalt);
@@ -635,7 +612,6 @@ body::before {
 .section-sub {
   font-size: 12px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 
 /* ─── Card Selection Slots ───────────────────────────────────────── */
@@ -731,7 +707,6 @@ body::before {
   padding: 18px 24px;
   border: none;
   border-radius: var(--radius-xl);
-  font-family: "Syne", sans-serif;
   font-size: 16px;
   font-weight: 800;
   cursor: pointer;
@@ -754,15 +729,15 @@ body::before {
   pointer-events: none;
 }
 .btn-combat {
-  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+  background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
   color: white;
 }
 .btn-antidote {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
   color: white;
 }
 .btn-synth {
-  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   color: white;
   font-size: 14px;
   padding: 15px 20px;
@@ -801,7 +776,6 @@ body::before {
   box-shadow: var(--shadow-md);
 }
 .formula-title {
-  font-family: "Syne", sans-serif;
   font-size: 16px;
   font-weight: 800;
   color: var(--cobalt);
@@ -852,18 +826,15 @@ body::before {
   color: var(--text-mid);
 }
 .formula-eq {
-  font-family: "DM Mono", monospace;
   color: var(--text-mute);
   font-size: 13px;
 }
 .formula-value {
-  font-family: "DM Mono", monospace;
   font-size: 15px;
   font-weight: 500;
   color: var(--text);
 }
 .formula-mult {
-  font-family: "DM Mono", monospace;
   font-size: 13px;
   color: var(--accent-o);
   font-weight: 700;
@@ -926,12 +897,10 @@ body::before {
   font-size: 48px;
 }
 .result-title {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
 }
 .result-pts {
-  font-family: "DM Mono", monospace;
   font-size: 28px;
   font-weight: 700;
   color: var(--accent-g);
@@ -1109,7 +1078,7 @@ body::before {
   background: #94a3b8;
 }
 .pip-rare {
-  background: #f97316;
+  background: var(--accent-o);
 }
 .pip-epic {
   background: #8b5cf6;
@@ -1136,7 +1105,6 @@ body::before {
 }
 .asset-name-en {
   font-size: 8px;
-  font-family: "DM Mono", monospace;
   color: var(--text-mute);
   text-align: center;
 }
@@ -1169,7 +1137,6 @@ body::before {
   font-size: 10px;
   font-weight: 800;
   color: white;
-  font-family: "DM Mono", monospace;
 }
 .asset-rarity-label {
   font-size: 8px;
@@ -1177,10 +1144,9 @@ body::before {
   color: var(--text-mute);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-family: "DM Mono", monospace;
 }
 .rarity-label-rare {
-  color: #f97316;
+  color: var(--accent-o);
 }
 .rarity-label-epic {
   color: #8b5cf6;
@@ -1285,7 +1251,7 @@ body::before {
 .synthesis-module {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  border: 2px solid #ddd6fe;
+  border: 2px solid var(--border);
   padding: 20px;
   box-shadow: var(--shadow-md);
 }
@@ -1297,13 +1263,12 @@ body::before {
 }
 .synth-icon {
   font-size: 20px;
-  color: #7c3aed;
+  color: #f59e0b;
 }
 .synth-title {
-  font-family: "Syne", sans-serif;
   font-size: 16px;
   font-weight: 800;
-  color: #7c3aed;
+  color: #f59e0b;
 }
 .recipe-card {
   display: flex;
@@ -1337,7 +1302,6 @@ body::before {
 .recipe-arrow {
   font-size: 16px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .result-chip {
   font-size: 11px;
@@ -1346,8 +1310,8 @@ body::before {
   font-weight: 700;
 }
 .result-chip.epic {
-  background: #ede9fe;
-  color: #7c3aed;
+  background: #fef3c7;
+  color: #f59e0b;
 }
 .recipe-desc {
   font-size: 12px;
@@ -1411,7 +1375,6 @@ body::before {
 .encyclo-name-en {
   font-size: 10px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .encyclo-tags {
   display: flex;
@@ -1451,13 +1414,19 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .avatar-glyph {
   font-size: 30px;
   color: var(--cobalt);
 }
 .profile-name {
-  font-family: "Syne", sans-serif;
   font-size: 20px;
   font-weight: 800;
   color: var(--text);
@@ -1465,7 +1434,6 @@ body::before {
 .profile-email {
   font-size: 12px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 
 .profile-stats-row {
@@ -1490,7 +1458,6 @@ body::before {
   margin: 4px 0;
 }
 .stat-value {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--cobalt);
@@ -1528,7 +1495,6 @@ body::before {
   color: var(--cobalt);
   letter-spacing: 0.08em;
   padding: 14px 16px 10px;
-  font-family: "DM Mono", monospace;
   text-transform: uppercase;
   border-bottom: 1px solid var(--border);
 }
@@ -1563,7 +1529,6 @@ body::before {
 }
 .redeem-cost {
   font-size: 11px;
-  font-family: "DM Mono", monospace;
   color: var(--cobalt);
   font-weight: 500;
 }
@@ -1600,7 +1565,6 @@ body::before {
   font-weight: 700;
   border-radius: 999px;
   padding: 2px 8px;
-  font-family: "DM Mono", monospace;
   letter-spacing: 0.04em;
 }
 .type-asset {
@@ -1622,7 +1586,6 @@ body::before {
 .topic-badge {
   font-size: 10px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 
 /* ─── Term Card Modal Content ────────────────────────────────────── */
@@ -1658,7 +1621,6 @@ body::before {
 .term-card-en {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .term-card-desc {
   font-size: 13px;
@@ -1728,7 +1690,6 @@ body::before {
   letter-spacing: 0.1em;
   color: var(--cobalt);
   text-transform: uppercase;
-  font-family: "DM Mono", monospace;
 }
 .modal-q {
   font-size: 16px;
@@ -1863,22 +1824,60 @@ body::before {
 .streak-chip {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  height: 30px;
   background: rgba(255, 255, 255, 0.6);
   border: 1.5px solid rgba(255, 255, 255, 0.8);
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 0 12px;
   backdrop-filter: blur(8px);
 }
+/* 搖曳火焰 SVG */
 .streak-fire {
-  font-size: 13px;
-  line-height: 1;
+  width: 15px;
+  height: 15px;
+  display: block;
+  overflow: visible;
+}
+.streak-fire .flame-outer {
+  transform-origin: 50% 95%;
+  animation: flameSway 1.8s ease-in-out infinite;
+}
+.streak-fire .flame-inner {
+  transform-origin: 50% 95%;
+  animation: flameFlicker 1.1s ease-in-out infinite;
+}
+@keyframes flameSway {
+  0%,
+  100% {
+    transform: rotate(-5deg) scaleY(1);
+  }
+  30% {
+    transform: rotate(4deg) scaleY(1.06);
+  }
+  60% {
+    transform: rotate(-3deg) scaleY(0.96);
+  }
+  80% {
+    transform: rotate(5deg) scaleY(1.03);
+  }
+}
+@keyframes flameFlicker {
+  0%,
+  100% {
+    transform: rotate(4deg) scaleY(0.95);
+  }
+  40% {
+    transform: rotate(-5deg) scaleY(1.1);
+  }
+  70% {
+    transform: rotate(3deg) scaleY(1);
+  }
 }
 .streak-value {
-  font-family: "DM Mono", monospace;
   font-weight: 700;
   font-size: 13px;
-  color: #f97316;
+  color: var(--accent-o);
 }
 
 /* ─── 百科列表 Mini Card 縮圖 ───────────────────────────────────── */
@@ -1949,25 +1948,43 @@ body::before {
   font-size: 10px;
   color: var(--text-mute);
   letter-spacing: 0.04em;
-  font-family: "DM Mono", monospace;
   text-align: center;
   margin-bottom: 2px;
 }
 
-.fan-hand {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding: 8px 8px 6px;
-  overflow: visible;
+/* 手牌轉盤：整組手牌是一個圓圈，可視範圍擷取上方扇形，
+   左右拖拉時轉動圓圈（FanHand.vue 的 wheelAngle 控制 rotate）。
+   高度貼齊卡片，避免中間留白；拖拉觸控限縮在卡片本身（.fan-spoke） */
+.fan-wheel {
+  position: relative;
+  height: 340px;
+  width: calc(100% + 28px); /* 突破 fan-stage 左右 padding，卡片左右破格 */
+  margin: 8px -14px 0;
+  overflow: hidden; /* 卡片超出由此裁切，頁面寬度不會被撐開 */
+}
+.fan-spoke {
+  --fan-card-w: 200px;
+  position: absolute;
+  bottom: -26px; /* 底部少量遮蔽，像卡片伸出畫面外 */
+  left: 50%;
+  width: var(--fan-card-w);
+  margin-left: calc(var(--fan-card-w) / -2);
+  /* 旋轉軸心在卡片下方遠處 → 形成大圓圈的扇形排列 */
+  transform-origin: 50% 700px;
+  will-change: transform;
+  touch-action: none; /* 卡片上的拖拉交給 pointer events */
+  cursor: grab;
+}
+.fan-spoke:active {
+  cursor: grabbing;
+}
+.fan-spoke .img-card-mini {
   width: 100%;
-  flex: 1;
 }
 
-/* ─── Fan Stage（隨文章捲動，在文章最底部）────────────────────── */
+/* ─── Fan Stage（隨文章捲動，在文章最底部，高度貼齊內容）──────── */
 .fan-stage {
-  min-height: 50vh;
-  background: var(--bg);
+  background: transparent; /* 透出 body 漸層 */
   border-top: 1.5px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -1989,7 +2006,6 @@ body::before {
   text-transform: uppercase;
 }
 .fan-stage-count {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
   font-weight: 500;
   color: var(--primary-mid);
@@ -2004,14 +2020,11 @@ body::before {
   width: 100%;
   flex-shrink: 0;
 }
+/* 手牌破格：配合 .main-flush-bottom 讓裁切線貼齊螢幕底部 */
 .fan-stage .fan-wrapper {
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
   gap: 0;
-}
-.fan-stage .fan-hand {
-  padding: 4px 8px 2px;
-  flex: 1;
 }
 
 /* slide-up transition for confirm button */
@@ -2051,22 +2064,10 @@ body::before {
   font-size: 20px;
   font-weight: 800;
   color: var(--text);
-  font-family: "Syne", sans-serif;
 }
 .combat-completed-sub {
   font-size: 14px;
   color: var(--text-mute);
-}
-
-.fan-outer {
-  position: relative;
-  transform-origin: bottom center;
-  margin-left: -30px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.fan-outer:first-child {
-  margin-left: 0;
 }
 
 .fan-inner {
@@ -2311,7 +2312,6 @@ body::before {
 }
 
 .fcard-strip-text {
-  font-family: "Syne", sans-serif;
   font-weight: 800;
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -2354,7 +2354,6 @@ body::before {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-38deg);
-  font-family: "Syne", sans-serif;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.3em;
@@ -2410,7 +2409,6 @@ body::before {
   position: absolute;
   top: 8px;
   right: 8px;
-  font-family: "DM Mono", monospace;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2430,11 +2428,9 @@ body::before {
 .fcard-name-en {
   font-size: 10px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
   font-style: italic;
 }
 .fcard-name {
-  font-family: "Syne", sans-serif;
   font-size: 16px;
   font-weight: 800;
   color: var(--text);
@@ -2473,7 +2469,6 @@ body::before {
 .fcard-source {
   font-size: 9px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .fcard-badge {
   width: 30px;
@@ -2485,7 +2480,6 @@ body::before {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 .fcard-power {
-  font-family: "DM Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: white;
@@ -2555,14 +2549,12 @@ body::before {
   flex-shrink: 0;
 }
 .encq-modal-name {
-  font-family: "Syne", sans-serif;
   font-size: 16px;
   font-weight: 800;
   color: var(--text);
   margin-bottom: 4px;
 }
 .encq-close-btn {
-  font-family: "DM Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-mute);
@@ -2593,32 +2585,6 @@ body::before {
   z-index: 2;
 }
 /* 百科 grid 視圖 */
-.encyclopedia-view-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.view-toggle-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-mute);
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-.view-toggle-btn.active {
-  border-color: var(--primary-mid);
-  background: var(--primary-light);
-  color: var(--primary);
-}
 .encyclopedia-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2645,12 +2611,10 @@ body::before {
 }
 .grid-card-img {
   width: 100%;
-  aspect-ratio: 3/4;
-  object-fit: cover;
+  height: auto;
   border-radius: var(--radius-sm);
 }
 .grid-card-num {
-  font-family: "DM Mono", monospace;
   font-size: 10px;
   color: var(--text-mute);
   letter-spacing: 0.05em;
@@ -2664,21 +2628,33 @@ body::before {
 .encq-detail-img {
   width: 100%;
   max-width: 160px;
-  aspect-ratio: 3/4;
-  object-fit: cover;
+  height: auto;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   align-self: center;
 }
+/* 未解鎖卡：圖片壓暗模糊 */
+.encq-detail-img--locked {
+  filter: grayscale(0.5) blur(3px);
+  opacity: 0.75;
+}
+.encq-locked-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mute);
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
 .encq-detail-name {
-  font-family: "Syne", sans-serif;
   font-size: 20px;
   font-weight: 800;
   color: var(--text);
   margin: 0;
 }
 .encq-detail-name-en {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
   color: var(--text-mute);
   text-transform: uppercase;
@@ -2704,7 +2680,6 @@ body::before {
   border: 1px solid var(--border);
 }
 .encq-detail-power {
-  font-family: "DM Mono", monospace;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-mute);
@@ -2720,11 +2695,11 @@ body::before {
   display: block;
 }
 
-/* 入口遮蓋（全螢幕固定） */
+/* 入口遮蓋（全螢幕固定，需高於 bottom-nav） */
 .intro-cover {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 10000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -2742,14 +2717,12 @@ body::before {
   gap: 10px;
 }
 .intro-eyebrow {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.2em;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
 }
 .intro-title {
-  font-family: "Syne", sans-serif;
   font-size: 36px;
   font-weight: 800;
   color: white;
@@ -2855,7 +2828,6 @@ body::before {
 .encq-owned-en {
   font-size: 10px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .encq-owned-desc {
   font-size: 12px;
@@ -2891,7 +2863,6 @@ body::before {
   color: var(--accent-o);
 }
 .encq-cooldown-timer {
-  font-family: "DM Mono", monospace;
   font-size: 22px;
   font-weight: 700;
   color: var(--accent-o);
@@ -2924,10 +2895,9 @@ body::before {
   text-align: center;
 }
 .synth-ov-title {
-  font-family: "Syne", sans-serif;
   font-size: 17px;
   font-weight: 800;
-  color: #7c3aed;
+  color: #f59e0b;
 }
 .synth-ov-desc {
   font-size: 12px;
@@ -2956,7 +2926,7 @@ body::before {
 .synth-ov-plus {
   font-size: 18px;
   font-weight: 800;
-  color: #7c3aed;
+  color: #f59e0b;
   flex-shrink: 0;
   line-height: 1;
 }
@@ -3034,8 +3004,7 @@ body::before {
 .synth-ov-anim-text {
   font-size: 14px;
   font-weight: 700;
-  color: #7c3aed;
-  font-family: "DM Mono", monospace;
+  color: #f59e0b;
   letter-spacing: 0.06em;
   animation: pulseOpacity 0.8s ease-in-out infinite alternate;
 }
@@ -3065,8 +3034,8 @@ body::before {
   .fcard-name {
     font-size: 14px;
   }
-  .fan-outer {
-    margin-left: -28px;
+  .fan-spoke {
+    --fan-card-w: 178px;
   }
   .streak-chip {
     padding: 3px 7px;
@@ -3141,18 +3110,13 @@ body::before {
   z-index: 2;
 }
 
-/* 卡片資訊下半區（45%）*/
+/* 卡片資訊下半區（45%）：粉彩底，文字深色 */
 .stack-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 7px;
   padding: 14px 18px 20px;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.22),
-    rgba(0, 0, 0, 0.42)
-  );
 }
 .stack-card-meta {
   display: flex;
@@ -3160,7 +3124,6 @@ body::before {
   justify-content: space-between;
 }
 .stack-pts-pill {
-  font-family: "DM Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   background: var(--accent-o);
@@ -3173,7 +3136,6 @@ body::before {
 .stack-badge {
   font-size: 10px;
   font-weight: 700;
-  font-family: "DM Mono", monospace;
   letter-spacing: 0.1em;
   border-radius: 999px;
   padding: 4px 12px;
@@ -3199,8 +3161,7 @@ body::before {
 
 .stack-source {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: "DM Mono", monospace;
+  color: rgba(15, 23, 42, 0.55);
 }
 
 .stack-tags {
@@ -3211,72 +3172,46 @@ body::before {
 .stack-tag {
   font-size: 10px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.15);
+  color: rgba(15, 23, 42, 0.65);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 999px;
   padding: 3px 9px;
 }
 
 .stack-title {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
-  font-weight: 800;
-  color: white;
+  font-weight: 900;
+  color: var(--text);
   line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .stack-sub {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(15, 23, 42, 0.6);
   line-height: 1.45;
 }
 .stack-cta {
-  font-family: "Syne", sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: white;
+  color: var(--primary);
   margin-top: auto;
 }
 .stack-date {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(15, 23, 42, 0.45);
   margin-top: auto;
 }
 
-/* ── 新聞卡預覽 Modal ─────────────────────────────────────────────────── */
-.news-card-preview-modal {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  max-width: 320px;
-  width: 90vw;
-}
-.news-card-preview-img {
-  width: 100%;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  transition: transform 0.2s ease;
-}
-.news-card-preview-img:active {
-  transform: scale(0.97);
-}
+/* ── 新聞卡預覽 Modal（沿用 fcard-* 樣式）──────────────────────────────── */
 .news-card-preview-hint {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
-  font-family: "DM Mono", monospace;
 }
 
 /* ═════════════════════════════════════════════════════════════════════
  * ── 戰鬥按鈕：鎖定/未選滿 狀態 ────────────────────────────────────
  * ═════════════════════════════════════════════════════════════════════ */
 .btn-card-count {
-  font-family: "DM Mono", monospace;
   font-size: 13px;
   opacity: 0.75;
 }
@@ -3297,12 +3232,12 @@ body::before {
   gap: 8px;
   padding: 8px;
 }
+/* 與知識庫小卡（.img-card-mini）同尺寸，完整顯示不裁切 */
 .result-news-card-img {
-  width: 80px;
-  height: 112px;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  width: 104px;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 .result-news-card-label {
   font-size: 13px;
@@ -3320,9 +3255,12 @@ body::before {
   padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 16px));
 }
 
+/* 輪播列：白底區塊區隔（取代上下分隔線）*/
 .arsenal-row-section {
-  border-bottom: 1.5px solid var(--border);
-  padding: 16px 0 14px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  margin: 6px 12px;
+  padding: 4px 0 14px;
 }
 
 /* 知識庫大標（section-title-row 版）*/
@@ -3338,14 +3276,12 @@ body::before {
   gap: 10px;
 }
 .arsenal-hero-title {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--text);
   letter-spacing: -0.02em;
 }
 .arsenal-hero-sub {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
   color: var(--text-mute);
 }
@@ -3355,10 +3291,8 @@ body::before {
   align-items: center;
   gap: 10px;
   padding: 16px 20px 10px;
-  border-top: 1px solid var(--border);
 }
 .arsenal-row-label {
-  font-family: "Syne", sans-serif;
   font-size: 13px;
   font-weight: 800;
   color: var(--primary);
@@ -3370,7 +3304,6 @@ body::before {
   border-radius: 0 6px 6px 0;
 }
 .arsenal-row-count {
-  font-family: "DM Mono", monospace;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-mute);
@@ -3526,7 +3459,6 @@ body::before {
 
 .news-month-label {
   flex: 1;
-  font-family: "Syne", sans-serif;
   font-size: 15px;
   font-weight: 800;
   color: var(--text);
@@ -3534,7 +3466,6 @@ body::before {
 .news-month-count {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: "DM Mono", monospace;
 }
 .news-month-arrow {
   font-size: 22px;
@@ -3556,7 +3487,8 @@ body::before {
 }
 
 .news-fan-card {
-  width: 92px;
+  width: calc((100vw - 110px) / 3);
+  max-width: 110px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3565,9 +3497,8 @@ body::before {
   transform-origin: bottom center;
 }
 .news-fan-img {
-  width: 92px;
-  height: 130px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   transition:
@@ -3578,17 +3509,17 @@ body::before {
   transform: translateY(-4px) scale(1.04);
   box-shadow: var(--shadow-lg);
 }
+/* 與資產卡 .carousel-card-name 同樣式 */
 .news-fan-title {
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-mute);
   text-align: center;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  width: 100%;
+  white-space: nowrap;
   overflow: hidden;
-  max-width: 92px;
-  line-height: 1.4;
+  text-overflow: ellipsis;
+  padding: 0 2px;
 }
 
 /* ── synthesis module in new arsenal ──────────────────────────── */
@@ -3596,22 +3527,21 @@ body::before {
   margin: 16px 16px 0;
 }
 
-/* ── image-only card components (MiniCard / AssetCard) ────────── */
+/* ── image-only card components (MiniCard / AssetCard) ──────────
+ * 尺寸對齊知識庫資產卡輪播，height auto 完整顯示不裁切 */
 .img-card-mini {
-  width: 82px;
+  width: 104px;
   max-width: 100%;
-  height: 122px;
-  object-fit: cover;
+  height: auto;
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
   display: block;
   flex-shrink: 0;
 }
 .img-card-asset {
-  width: 92px;
+  width: 104px;
   max-width: 100%;
-  height: 130px;
-  object-fit: cover;
+  height: auto;
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
   display: block;
@@ -3620,6 +3550,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1036 / 1600; /* 對齊卡圖原始比例 */
   background: color-mix(in srgb, var(--accent, #3b82f6) 14%, white);
   color: var(--accent, #3b82f6);
   font-size: 20px;

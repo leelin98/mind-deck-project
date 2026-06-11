@@ -12,13 +12,33 @@
 
     <!-- ── Top Nav ── -->
     <header class="top-nav">
-      <div class="nav-brand" @click="state.activeTab = 'combat'">
-        <span class="brand-icon">⬡</span>
-        <span class="brand-text">MIND·DECK</span>
+      <div class="nav-brand" @click="goBrandHome">
+        <img
+          :src="`${BASE_URL}/images/ui/logo-icon.png`"
+          alt=""
+          class="brand-icon-img"
+        />
+        <img
+          :src="`${BASE_URL}/images/ui/logo.png`"
+          alt="腦補計畫"
+          class="brand-logo-img"
+        />
       </div>
       <div class="nav-user">
         <div class="streak-chip">
-          <span class="streak-fire">🔥</span>
+          <!-- 搖曳火焰 SVG：外焰橘、內焰黃，各自獨立擺動 -->
+          <svg class="streak-fire" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              class="flame-outer"
+              d="M12 2C12.5 5.5 7 8.5 7 14a5 5 0 0 0 10 0c0-2.4-1.2-4.5-2.4-6.2C13.6 6.4 12.3 4.3 12 2z"
+              fill="#F97316"
+            />
+            <path
+              class="flame-inner"
+              d="M12 21a3 3 0 0 1-3-3c0-1.7 1.2-2.7 2-3.7.5-.7.9-1.4 1-2.2 1.3 1.3 3 3.3 3 5.9a3 3 0 0 1-3 3z"
+              fill="#FBBF24"
+            />
+          </svg>
           <span class="streak-value">{{ state.streak }}</span>
         </div>
         <div class="points-chip">
@@ -29,752 +49,724 @@
     </header>
 
     <!-- ── Main Content ── -->
-    <main class="main-content" ref="mainEl">
-      <!-- ══ COMBAT TAB ══ -->
-      <template v-if="state.activeTab === 'combat'">
-        <!-- 新聞清單頁（堆疊卡片） -->
-        <div v-if="!state.newsDetailMode" class="news-stack-view">
-          <!--
+    <main
+      class="main-content"
+      :class="{ 'main-flush-bottom': !!state.newsDetailMode }"
+      ref="mainEl"
+    >
+      <!-- 內層 wrapper：Lenis content，高度隨內容變化讓 ResizeObserver 正確更新捲動範圍 -->
+      <div class="main-inner" ref="mainInnerEl">
+        <!-- ══ COMBAT TAB ══ -->
+        <template v-if="state.activeTab === 'combat'">
+          <!-- 新聞清單頁（堆疊卡片） -->
+          <div v-if="!state.newsDetailMode" class="news-stack-view">
+            <!--
             JS 虛擬滾動：overflow hidden + 攔截 wheel/touch
             所有卡片 position:absolute，今日卡固定在 top:0，
             舊卡依 stackScrollY 計算 translateY（100%→0%）
           -->
-          <div
-            class="stack-scroller"
-            ref="stackScrollerEl"
-            @wheel.prevent="onStackWheel"
-            @touchstart.passive="onStackTouchStart"
-            @touchmove.prevent="onStackTouchMove"
-            @touchend.passive="onStackTouchEnd"
-          >
-            <!-- 今日新聞卡（z-index 最低，始終可見） -->
             <div
-              class="stack-card"
-              :style="{
-                '--card-bg':
-                  topicColors[state.todayNews?.topic] ||
-                  'linear-gradient(135deg,#F97316,#FBBF24)',
-                zIndex: 1,
-              }"
-              @click="openNewsDetail(state.todayNews.id)"
+              class="stack-scroller"
+              ref="stackScrollerEl"
+              @wheel.prevent="onStackWheel"
+              @touchstart.passive="onStackTouchStart"
+              @touchmove.prevent="onStackTouchMove"
+              @touchend.passive="onStackTouchEnd"
             >
-              <div class="stack-hero">
-                <img
-                  v-if="state.todayNews?.image"
-                  :src="`${BASE_URL}${state.todayNews.image}`"
-                  class="stack-hero-img"
-                  :alt="state.todayNews.title"
-                  @error="$event.target.style.display = 'none'"
-                />
-                <div class="stack-hero-overlay"></div>
-                <span class="stack-badge today-badge stack-hero-badge"
-                  >今日挑戰</span
-                >
-              </div>
-              <div class="stack-card-body">
-                <div class="stack-card-meta">
-                  <span class="stack-source">{{ state.todayNews.source }}</span>
-                  <span class="stack-pts-pill"
-                    >{{ state.todayNews.difficulty }} pts</span
-                  >
-                </div>
-                <div class="stack-tags">
-                  <span
-                    v-for="tag in state.todayNews?.tags || []"
-                    :key="tag"
-                    class="stack-tag"
-                    >{{ tag }}</span
-                  >
-                </div>
-                <h2 class="stack-title">{{ state.todayNews.title }}</h2>
-                <p class="stack-sub">{{ state.todayNews.subtitle }}</p>
-                <span class="stack-cta">開始挑戰 →</span>
-              </div>
-            </div>
-
-            <!-- 過往新聞卡（從下方滑入覆蓋今日卡，z-index 依序疊高，通關後不顯示） -->
-            <div
-              v-for="(news, i) in stackPrevNews"
-              :key="news.id"
-              class="stack-card"
-              :style="{
-                '--card-bg':
-                  topicColors[news.topic] ||
-                  'linear-gradient(135deg,#475569,#94A3B8)',
-                zIndex: i + 2,
-                transform: prevCardTransform(i),
-              }"
-              @click="openNewsDetail(news.id)"
-            >
-              <div class="stack-hero">
-                <img
-                  v-if="news.image"
-                  :src="`${BASE_URL}${news.image}`"
-                  class="stack-hero-img"
-                  :alt="news.title"
-                  @error="$event.target.style.display = 'none'"
-                />
-                <div class="stack-hero-overlay"></div>
-                <span
-                  class="stack-badge stack-hero-badge"
-                  :class="
-                    getNewsLockRemaining(news.id) > 0
-                      ? 'locked-badge'
-                      : 'pending-badge'
-                  "
-                >
-                  {{
-                    getNewsLockRemaining(news.id) > 0
-                      ? `🔒 ${formatLock(getNewsLockRemaining(news.id))}`
-                      : "未挑戰"
-                  }}
-                </span>
-              </div>
-              <div class="stack-card-body">
-                <div class="stack-card-meta">
-                  <span class="stack-source">{{ news.source }}</span>
-                  <span class="stack-pts-pill">{{ news.difficulty }} pts</span>
-                </div>
-                <div class="stack-tags">
-                  <span
-                    v-for="tag in news.tags || []"
-                    :key="tag"
-                    class="stack-tag"
-                    >{{ tag }}</span
-                  >
-                </div>
-                <h2 class="stack-title">{{ news.title }}</h2>
-                <p class="stack-sub">{{ news.subtitle }}</p>
-                <span class="stack-date">{{ news.date }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 新聞詳細頁 -->
-        <div v-else class="news-detail-view">
-          <div class="detail-nav">
-            <button class="detail-back-btn" @click="closeNewsDetail">
-              ← 返回
-            </button>
-            <span class="detail-nav-label">{{ state.activeNews?.source }}</span>
-          </div>
-
-          <!-- SELECT 階段 -->
-          <template v-if="state.combatPhase === 'select'">
-            <div class="news-article">
-              <div class="article-img-wrap">
-                <img
-                  v-if="!articleImgFailed && state.activeNews?.image"
-                  :src="`${BASE_URL}${state.activeNews.image}`"
-                  :alt="state.activeNews.title"
-                  class="article-img"
-                  @error="articleImgFailed = true"
-                />
-                <div
-                  v-else
-                  class="article-img-fallback"
-                  :style="articleHeaderStyle"
-                ></div>
-              </div>
-              <div class="article-meta">
-                <span class="news-source-dark">{{
-                  state.activeNews?.source
-                }}</span>
-                <span class="article-date">{{ state.activeNews?.date }}</span>
-              </div>
-              <h1 class="article-title">{{ state.activeNews?.title }}</h1>
-              <div class="article-tags">
-                <span
-                  v-for="tag in state.activeNews?.tags || []"
-                  :key="tag"
-                  class="tag-chip"
-                  >{{ tag }}</span
-                >
-              </div>
-              <div class="article-body">
-                <p
-                  v-for="(para, pIdx) in parsedArticle"
-                  :key="pIdx"
-                  class="article-para"
-                >
-                  <template v-for="(part, i) in para" :key="i">
-                    <span v-if="part.type === 'text'">{{ part.content }}</span>
-                    <button
-                      v-else-if="part.type === 'term'"
-                      class="term-highlight"
-                      @click="openTermCard(part.content)"
-                    >
-                      {{ part.content }}
-                    </button>
-                  </template>
-                </p>
-              </div>
-            </div>
-
-            <!-- 出牌區（已通關或歸檔不顯示）-->
-            <div
-              v-if="!state.activeNews?.completed && !state.activeNews?.archived"
-              class="fan-stage"
-            >
-              <div class="fan-stage-header">
-                <span class="fan-stage-label">選擇 3 張資產卡出戰</span>
-                <span class="fan-stage-count"
-                  >{{ selectedCardIds.length }}/3</span
-                >
-              </div>
-
-              <div class="slots-row">
-                <div
-                  v-for="(slot, i) in state.selectedSlots"
-                  :key="i"
-                  class="slot-target"
-                  :class="{ filled: slot !== null }"
-                  @click="slot !== null && removeSlot(i)"
-                >
-                  <template v-if="slot !== null">
-                    <MiniCard :card="getCard(slot)" />
-                    <span class="slot-remove">✕</span>
-                  </template>
-                  <template v-else>
-                    <span class="slot-empty-icon">＋</span>
-                    <span class="slot-empty-label">{{ i + 1 }}</span>
-                  </template>
-                </div>
-              </div>
-
-              <button
-                class="btn-combat puffy-btn fan-confirm-btn"
-                :class="{ 'btn-locked-state': isCurrentNewsLocked }"
-                :disabled="selectedCardIds.length < 3 || isCurrentNewsLocked"
-                @click="startCombat"
+              <!-- 今日新聞卡（z-index 最低，始終可見） -->
+              <div
+                class="stack-card"
+                :style="{
+                  '--card-bg':
+                    topicColors[state.todayNews?.topic] ||
+                    'linear-gradient(135deg,#FFEDD5,#FED7AA)',
+                  zIndex: 1,
+                }"
+                @click="openNewsDetail(state.todayNews.id)"
               >
-                <template v-if="isCurrentNewsLocked">
-                  <span>🔒 鎖定中 {{ newsLockCountdown }}</span>
-                </template>
-                <template v-else>
-                  <span>⚔ 開始戰鬥</span>
-                  <span v-if="selectedCardIds.length < 3" class="btn-card-count"
+                <div class="stack-hero">
+                  <img
+                    v-if="state.todayNews?.image"
+                    :src="`${BASE_URL}${state.todayNews.image}`"
+                    class="stack-hero-img"
+                    :alt="state.todayNews.title"
+                    @error="$event.target.style.display = 'none'"
+                  />
+                  <div class="stack-hero-overlay"></div>
+                  <span class="stack-badge today-badge stack-hero-badge"
+                    >今日挑戰</span
+                  >
+                </div>
+                <div class="stack-card-body">
+                  <div class="stack-card-meta">
+                    <span class="stack-source">{{
+                      state.todayNews.source
+                    }}</span>
+                    <span class="stack-pts-pill"
+                      >{{ state.todayNews.difficulty }} pts</span
+                    >
+                  </div>
+                  <div class="stack-tags">
+                    <span
+                      v-for="tag in state.todayNews?.tags || []"
+                      :key="tag"
+                      class="stack-tag"
+                      >{{ tag }}</span
+                    >
+                  </div>
+                  <h2 class="stack-title">{{ state.todayNews.title }}</h2>
+                  <p class="stack-sub">{{ state.todayNews.subtitle }}</p>
+                  <span class="stack-cta">開始挑戰 →</span>
+                </div>
+              </div>
+
+              <!-- 過往新聞卡（從下方滑入覆蓋今日卡，z-index 依序疊高，通關後不顯示） -->
+              <div
+                v-for="(news, i) in stackPrevNews"
+                :key="news.id"
+                class="stack-card"
+                :style="{
+                  '--card-bg':
+                    topicColors[news.topic] ||
+                    'linear-gradient(135deg,#F1F5F9,#E2E8F0)',
+                  zIndex: i + 2,
+                  transform: prevCardTransform(i),
+                }"
+                @click="openNewsDetail(news.id)"
+              >
+                <div class="stack-hero">
+                  <img
+                    v-if="news.image"
+                    :src="`${BASE_URL}${news.image}`"
+                    class="stack-hero-img"
+                    :alt="news.title"
+                    @error="$event.target.style.display = 'none'"
+                  />
+                  <div class="stack-hero-overlay"></div>
+                  <span
+                    class="stack-badge stack-hero-badge"
+                    :class="
+                      getNewsLockRemaining(news.id) > 0
+                        ? 'locked-badge'
+                        : 'pending-badge'
+                    "
+                  >
+                    {{
+                      getNewsLockRemaining(news.id) > 0
+                        ? `🔒 ${formatLock(getNewsLockRemaining(news.id))}`
+                        : "未挑戰"
+                    }}
+                  </span>
+                </div>
+                <div class="stack-card-body">
+                  <div class="stack-card-meta">
+                    <span class="stack-source">{{ news.source }}</span>
+                    <span class="stack-pts-pill"
+                      >{{ news.difficulty }} pts</span
+                    >
+                  </div>
+                  <div class="stack-tags">
+                    <span
+                      v-for="tag in news.tags || []"
+                      :key="tag"
+                      class="stack-tag"
+                      >{{ tag }}</span
+                    >
+                  </div>
+                  <h2 class="stack-title">{{ news.title }}</h2>
+                  <p class="stack-sub">{{ news.subtitle }}</p>
+                  <span class="stack-date">{{ news.date }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 新聞詳細頁 -->
+          <div v-else class="news-detail-view">
+            <div class="detail-nav">
+              <button class="detail-back-btn" @click="closeNewsDetail">
+                ← 返回
+              </button>
+              <span class="detail-nav-label">{{
+                state.activeNews?.source
+              }}</span>
+            </div>
+
+            <!-- SELECT 階段 -->
+            <template v-if="state.combatPhase === 'select'">
+              <div class="news-article">
+                <div class="article-img-wrap">
+                  <img
+                    v-if="!articleImgFailed && state.activeNews?.image"
+                    :src="`${BASE_URL}${state.activeNews.image}`"
+                    :alt="state.activeNews.title"
+                    class="article-img"
+                    @error="articleImgFailed = true"
+                  />
+                  <div
+                    v-else
+                    class="article-img-fallback"
+                    :style="articleHeaderStyle"
+                  ></div>
+                </div>
+                <div class="article-meta">
+                  <span class="news-source-dark">{{
+                    state.activeNews?.source
+                  }}</span>
+                  <span class="article-date">{{ state.activeNews?.date }}</span>
+                </div>
+                <h1 class="article-title">{{ state.activeNews?.title }}</h1>
+                <div class="article-tags">
+                  <span
+                    v-for="tag in state.activeNews?.tags || []"
+                    :key="tag"
+                    class="tag-chip"
+                    >{{ tag }}</span
+                  >
+                </div>
+                <div class="article-body">
+                  <p
+                    v-for="(para, pIdx) in parsedArticle"
+                    :key="pIdx"
+                    class="article-para"
+                  >
+                    <template v-for="(part, i) in para" :key="i">
+                      <span v-if="part.type === 'text'">{{
+                        part.content
+                      }}</span>
+                      <button
+                        v-else-if="part.type === 'term'"
+                        class="term-highlight"
+                        @click="openTermCard(part.content)"
+                      >
+                        {{ part.content }}
+                      </button>
+                    </template>
+                  </p>
+                </div>
+              </div>
+
+              <!-- 出牌區（已通關或歸檔不顯示）-->
+              <div
+                v-if="
+                  !state.activeNews?.completed && !state.activeNews?.archived
+                "
+                class="fan-stage"
+              >
+                <div class="fan-stage-header">
+                  <span class="fan-stage-label">選擇 3 張資產卡出戰</span>
+                  <span class="fan-stage-count"
                     >{{ selectedCardIds.length }}/3</span
                   >
-                </template>
-              </button>
+                </div>
 
-              <FanHand
-                :cards="ownedCards"
-                :selected-ids="selectedCardIds"
-                @pick="handleFanPick"
-                @remove="handleFanRemove"
-              />
-            </div>
-          </template>
+                <div class="slots-row">
+                  <div
+                    v-for="(slot, i) in state.selectedSlots"
+                    :key="i"
+                    class="slot-target"
+                    :class="{ filled: slot !== null }"
+                    @click="slot !== null && removeSlot(i)"
+                  >
+                    <template v-if="slot !== null">
+                      <MiniCard :card="getCard(slot)" />
+                      <span class="slot-remove">✕</span>
+                    </template>
+                    <template v-else>
+                      <span class="slot-empty-icon">＋</span>
+                      <span class="slot-empty-label">{{ i + 1 }}</span>
+                    </template>
+                  </div>
+                </div>
 
-          <!-- 非 SELECT 階段 -->
-          <div v-else class="tab-panel" ref="resultPanelEl">
-            <!-- reveal 與 result 共用：解析數值框永遠顯示 -->
-            <div
-              v-if="
-                state.combatPhase === 'reveal' || state.combatPhase === 'result'
-              "
-              class="reveal-phase"
-            >
-              <BattleFormula :result="state.combatResult" />
-            </div>
-
-            <!-- result：成功訊息接在解析框下方 -->
-            <div
-              v-if="state.combatPhase === 'result'"
-              class="result-phase"
-              ref="resultSuccessEl"
-            >
-              <div class="result-card success">
-                <div class="result-icon">🏆</div>
-                <h3 class="result-title">解析成功！</h3>
-                <p class="result-pts" v-if="state.combatResult?.pointsDelta">
-                  +{{ state.combatResult.pointsDelta }} pts
-                </p>
-                <p
-                  v-if="state.combatResult?.matched?.length"
-                  class="result-match"
+                <button
+                  class="btn-combat puffy-btn fan-confirm-btn"
+                  :class="{ 'btn-locked-state': isCurrentNewsLocked }"
+                  :disabled="selectedCardIds.length < 3 || isCurrentNewsLocked"
+                  @click="startCombat"
                 >
-                  ✦ 共鳴標籤：{{ state.combatResult.matched.join("、") }}
-                </p>
-                <p
-                  v-if="state.combatResult?.antidoteSuccess"
-                  class="result-antidote"
-                >
-                  💊 解藥成功 — 已獲得新資產卡
-                </p>
-                <div class="result-news-card-earned">
-                  <img
-                    :src="`${BASE_URL}images/cards/news-001.jpg`"
-                    class="result-news-card-img"
-                    alt="新聞卡"
+                  <template v-if="isCurrentNewsLocked">
+                    <span>🔒 鎖定中 {{ newsLockCountdown }}</span>
+                  </template>
+                  <template v-else>
+                    <span>⚔ 開始戰鬥</span>
+                    <span
+                      v-if="selectedCardIds.length < 3"
+                      class="btn-card-count"
+                      >{{ selectedCardIds.length }}/3</span
+                    >
+                  </template>
+                </button>
+
+                <FanHand
+                  :cards="ownedCards"
+                  :selected-ids="selectedCardIds"
+                  @pick="handleFanPick"
+                  @remove="handleFanRemove"
+                />
+              </div>
+            </template>
+
+            <!-- 非 SELECT 階段 -->
+            <div v-else class="tab-panel" ref="resultPanelEl">
+              <!-- reveal 與 result 共用：解析數值框永遠顯示 -->
+              <div
+                v-if="
+                  state.combatPhase === 'reveal' ||
+                  state.combatPhase === 'result'
+                "
+                class="reveal-phase"
+              >
+                <BattleFormula :result="state.combatResult" />
+              </div>
+
+              <!-- result：成功訊息接在解析框下方 -->
+              <div
+                v-if="state.combatPhase === 'result'"
+                class="result-phase"
+                ref="resultSuccessEl"
+              >
+                <div class="result-card success">
+                  <div class="result-icon">🏆</div>
+                  <h3 class="result-title">解析成功！</h3>
+                  <p class="result-pts" v-if="state.combatResult?.pointsDelta">
+                    +{{ state.combatResult.pointsDelta }} pts
+                  </p>
+                  <p
+                    v-if="state.combatResult?.matched?.length"
+                    class="result-match"
+                  >
+                    ✦ 共鳴標籤：{{ state.combatResult.matched.join("、") }}
+                  </p>
+                  <p
+                    v-if="state.combatResult?.antidoteSuccess"
+                    class="result-antidote"
+                  >
+                    💊 解藥成功 — 已獲得新資產卡
+                  </p>
+                  <div class="result-news-card-earned">
+                    <img
+                      :src="`${BASE_URL}/images/cards/news-001.jpg`"
+                      class="result-news-card-img"
+                      alt="新聞卡"
+                    />
+                    <span class="result-news-card-label"
+                      >🎴 新聞卡已加入資產庫</span
+                    >
+                  </div>
+                  <button class="btn-secondary" @click="goToArsenal">
+                    去我的知識庫 →
+                  </button>
+                </div>
+              </div>
+
+              <div v-else-if="state.combatPhase === 'fail'" class="fail-phase">
+                <div class="result-card fail">
+                  <div class="result-icon">⚠</div>
+                  <h3 class="result-title">情報不足！</h3>
+                  <p class="result-desc">偵測到未知領域盲區</p>
+                  <a
+                    :href="state.activeNews?.antidoteUrl"
+                    target="_blank"
+                    class="btn-antidote puffy-btn"
+                  >
+                    🔗 前往情報站獲取解藥
+                  </a>
+                  <button
+                    class="btn-secondary mt-2"
+                    @click="state.combatPhase = 'antidote'"
+                  >
+                    已取得解藥 — 輸入關鍵字
+                  </button>
+                </div>
+              </div>
+
+              <div
+                v-else-if="state.combatPhase === 'antidote'"
+                class="antidote-phase"
+              >
+                <div class="antidote-card">
+                  <p class="antidote-label">輸入解藥關鍵字</p>
+                  <p class="antidote-hint">
+                    {{
+                      state.activeNews?.antidoteHint ||
+                      "（提示：回想今日新聞關鍵字）"
+                    }}
+                  </p>
+                  <input
+                    v-model="state.antidoteInput"
+                    class="antidote-input"
+                    :class="{ error: state.antidoteError }"
+                    placeholder="關鍵字…"
+                    @keyup.enter="submitAntidote"
                   />
-                  <span class="result-news-card-label"
-                    >🎴 新聞卡已加入資產庫</span
+                  <p v-if="state.antidoteError" class="antidote-error">
+                    ✕ 關鍵字不符，再試一次
+                  </p>
+                  <button
+                    class="btn-combat puffy-btn mt-3"
+                    @click="submitAntidote"
+                  >
+                    💊 驗證解鎖新資產
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- ══ ARSENAL TAB ══ -->
+        <section v-else-if="state.activeTab === 'arsenal'" class="arsenal-tab">
+          <!-- 知識庫大標 -->
+          <div class="section-title-row arsenal-section-title">
+            <h2 class="section-title">我的知識庫</h2>
+            <span class="section-sub"
+              >{{ ownedCards.length }} 張卡片已收錄</span
+            >
+          </div>
+
+          <!-- 資產行 -->
+          <div class="arsenal-row-section">
+            <div class="arsenal-row-header">
+              <span class="arsenal-row-label">資產</span>
+              <span class="arsenal-row-count">{{ assetCards.length }}</span>
+            </div>
+            <div class="arsenal-carousel-wrap">
+              <Swiper
+                v-if="assetCards.length > 0"
+                :modules="[Autoplay]"
+                :slides-per-view="'auto'"
+                :space-between="12"
+                :loop="true"
+                :grab-cursor="true"
+                :autoplay="{
+                  delay: 0,
+                  disableOnInteraction: false,
+                  reverseDirection: false,
+                  waitForTransition: false,
+                  pauseOnMouseEnter: false,
+                }"
+                :speed="4500"
+                class="cards-swiper"
+                @swiper="onAssetSwiper"
+              >
+                <SwiperSlide
+                  v-for="(card, idx) in [
+                    ...assetCards,
+                    ...assetCards,
+                    ...assetCards,
+                  ]"
+                  :key="`asset-${idx}`"
+                  class="cards-swiper-slide"
+                  :class="{
+                    'new-card': card.id === state.lastSynthesizedCardId,
+                  }"
+                  @click="openFullCard(card.id)"
+                >
+                  <img
+                    :src="getCardImage(card)"
+                    :alt="card.name"
+                    class="carousel-card-img"
+                  />
+                  <span class="carousel-card-name">{{ card.name }}</span>
+                </SwiperSlide>
+              </Swiper>
+              <p v-else class="carousel-empty">尚無資產卡</p>
+            </div>
+          </div>
+
+          <!-- 技術行 -->
+          <div class="arsenal-row-section">
+            <div class="arsenal-row-header">
+              <span class="arsenal-row-label">技術</span>
+              <span class="arsenal-row-count">{{ techCards.length }}</span>
+            </div>
+            <div class="arsenal-carousel-wrap">
+              <Swiper
+                v-if="techCards.length > 0"
+                :modules="[Autoplay]"
+                :slides-per-view="'auto'"
+                :space-between="12"
+                :loop="true"
+                :grab-cursor="true"
+                :autoplay="{
+                  delay: 0,
+                  disableOnInteraction: false,
+                  reverseDirection: true,
+                  waitForTransition: false,
+                  pauseOnMouseEnter: false,
+                }"
+                :speed="4500"
+                class="cards-swiper"
+                @swiper="onTechSwiper"
+              >
+                <SwiperSlide
+                  v-for="(card, idx) in [
+                    ...techCards,
+                    ...techCards,
+                    ...techCards,
+                  ]"
+                  :key="`tech-${idx}`"
+                  class="cards-swiper-slide"
+                  @click="openFullCard(card.id)"
+                >
+                  <img
+                    :src="getCardImage(card)"
+                    :alt="card.name"
+                    class="carousel-card-img"
+                  />
+                  <span class="carousel-card-name">{{ card.name }}</span>
+                </SwiperSlide>
+              </Swiper>
+              <p v-else class="carousel-empty">尚無技術卡</p>
+            </div>
+          </div>
+
+          <!-- 策略行 -->
+          <div class="arsenal-row-section">
+            <div class="arsenal-row-header">
+              <span class="arsenal-row-label">策略</span>
+              <span class="arsenal-row-count">{{ strategyCards.length }}</span>
+            </div>
+            <div class="arsenal-carousel-wrap">
+              <Swiper
+                v-if="strategyCards.length > 0"
+                :modules="[Autoplay]"
+                :slides-per-view="'auto'"
+                :space-between="12"
+                :loop="true"
+                :grab-cursor="true"
+                :autoplay="{
+                  delay: 0,
+                  disableOnInteraction: false,
+                  reverseDirection: false,
+                  waitForTransition: false,
+                  pauseOnMouseEnter: false,
+                }"
+                :speed="4500"
+                class="cards-swiper"
+                @swiper="onStrategySwiper"
+              >
+                <SwiperSlide
+                  v-for="(card, idx) in [
+                    ...strategyCards,
+                    ...strategyCards,
+                    ...strategyCards,
+                  ]"
+                  :key="`strat-${idx}`"
+                  class="cards-swiper-slide"
+                  @click="openFullCard(card.id)"
+                >
+                  <img
+                    :src="getCardImage(card)"
+                    :alt="card.name"
+                    class="carousel-card-img"
+                  />
+                  <span class="carousel-card-name">{{ card.name }}</span>
+                </SwiperSlide>
+              </Swiper>
+              <p v-else class="carousel-empty">尚無策略卡</p>
+            </div>
+          </div>
+
+          <!-- 新聞卡行（月份 accordion + fan out） -->
+          <div class="arsenal-row-section">
+            <div class="arsenal-row-header">
+              <span class="arsenal-row-label">新聞卡</span>
+              <span class="arsenal-row-count">{{
+                state.earnedNewsCards.length
+              }}</span>
+            </div>
+
+            <div
+              v-if="state.earnedNewsCards.length === 0"
+              class="carousel-empty news-empty"
+            >
+              贏得新聞戰鬥後自動收錄
+            </div>
+
+            <div v-else class="news-accordion">
+              <div
+                v-for="[month, cards] in newsCardsByMonth"
+                :key="month"
+                class="news-month-block"
+              >
+                <div class="news-month-header" @click="toggleMonth(month)">
+                  <span class="news-month-label">{{ formatMonth(month) }}</span>
+                  <span class="news-month-count">{{ cards.length }} 張</span>
+                  <span
+                    class="news-month-arrow"
+                    :class="{ open: expandedMonth === month }"
+                    >›</span
                   >
                 </div>
-                <button class="btn-secondary" @click="goToArsenal">
-                  去我的知識庫 →
-                </button>
-              </div>
-            </div>
 
-            <div v-else-if="state.combatPhase === 'fail'" class="fail-phase">
-              <div class="result-card fail">
-                <div class="result-icon">⚠</div>
-                <h3 class="result-title">情報不足！</h3>
-                <p class="result-desc">偵測到未知領域盲區</p>
-                <a
-                  :href="state.activeNews?.antidoteUrl"
-                  target="_blank"
-                  class="btn-antidote puffy-btn"
-                >
-                  🔗 前往情報站獲取解藥
-                </a>
-                <button
-                  class="btn-secondary mt-2"
-                  @click="state.combatPhase = 'antidote'"
-                >
-                  已取得解藥 — 輸入關鍵字
-                </button>
-              </div>
-            </div>
-
-            <div
-              v-else-if="state.combatPhase === 'antidote'"
-              class="antidote-phase"
-            >
-              <div class="antidote-card">
-                <p class="antidote-label">輸入解藥關鍵字</p>
-                <p class="antidote-hint">
-                  {{
-                    state.activeNews?.antidoteHint ||
-                    "（提示：回想今日新聞關鍵字）"
-                  }}
-                </p>
-                <input
-                  v-model="state.antidoteInput"
-                  class="antidote-input"
-                  :class="{ error: state.antidoteError }"
-                  placeholder="關鍵字…"
-                  @keyup.enter="submitAntidote"
-                />
-                <p v-if="state.antidoteError" class="antidote-error">
-                  ✕ 關鍵字不符，再試一次
-                </p>
-                <button
-                  class="btn-combat puffy-btn mt-3"
-                  @click="submitAntidote"
-                >
-                  💊 驗證解鎖新資產
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- ══ ARSENAL TAB ══ -->
-      <section v-else-if="state.activeTab === 'arsenal'" class="arsenal-tab">
-        <!-- 知識庫大標 -->
-        <div class="section-title-row arsenal-section-title">
-          <h2 class="section-title">我的知識庫</h2>
-          <span class="section-sub">{{ ownedCards.length }} 張卡片已收錄</span>
-        </div>
-
-        <!-- 資產行 -->
-        <div class="arsenal-row-section">
-          <div class="arsenal-row-header">
-            <span class="arsenal-row-label">資產</span>
-            <span class="arsenal-row-count">{{ assetCards.length }}</span>
-          </div>
-          <div class="arsenal-carousel-wrap">
-            <Swiper
-              v-if="assetCards.length > 0"
-              :modules="[Autoplay]"
-              :slides-per-view="'auto'"
-              :space-between="12"
-              :loop="true"
-              :grab-cursor="true"
-              :autoplay="{
-                delay: 0,
-                disableOnInteraction: false,
-                reverseDirection: false,
-                waitForTransition: false,
-                pauseOnMouseEnter: false,
-              }"
-              :speed="4500"
-              class="cards-swiper"
-              @swiper="onAssetSwiper"
-            >
-              <SwiperSlide
-                v-for="(card, idx) in [
-                  ...assetCards,
-                  ...assetCards,
-                  ...assetCards,
-                ]"
-                :key="`asset-${idx}`"
-                class="cards-swiper-slide"
-                :class="{ 'new-card': card.id === state.lastSynthesizedCardId }"
-                @click="openFullCard(card.id)"
-              >
-                <img
-                  :src="getCardImage(card)"
-                  :alt="card.name"
-                  class="carousel-card-img"
-                />
-                <span class="carousel-card-name">{{ card.name }}</span>
-              </SwiperSlide>
-            </Swiper>
-            <p v-else class="carousel-empty">尚無資產卡</p>
-          </div>
-        </div>
-
-        <!-- 技術行 -->
-        <div class="arsenal-row-section">
-          <div class="arsenal-row-header">
-            <span class="arsenal-row-label">技術</span>
-            <span class="arsenal-row-count">{{ techCards.length }}</span>
-          </div>
-          <div class="arsenal-carousel-wrap">
-            <Swiper
-              v-if="techCards.length > 0"
-              :modules="[Autoplay]"
-              :slides-per-view="'auto'"
-              :space-between="12"
-              :loop="true"
-              :grab-cursor="true"
-              :autoplay="{
-                delay: 0,
-                disableOnInteraction: false,
-                reverseDirection: true,
-                waitForTransition: false,
-                pauseOnMouseEnter: false,
-              }"
-              :speed="4500"
-              class="cards-swiper"
-              @swiper="onTechSwiper"
-            >
-              <SwiperSlide
-                v-for="(card, idx) in [
-                  ...techCards,
-                  ...techCards,
-                  ...techCards,
-                ]"
-                :key="`tech-${idx}`"
-                class="cards-swiper-slide"
-                @click="openFullCard(card.id)"
-              >
-                <img
-                  :src="getCardImage(card)"
-                  :alt="card.name"
-                  class="carousel-card-img"
-                />
-                <span class="carousel-card-name">{{ card.name }}</span>
-              </SwiperSlide>
-            </Swiper>
-            <p v-else class="carousel-empty">尚無技術卡</p>
-          </div>
-        </div>
-
-        <!-- 策略行 -->
-        <div class="arsenal-row-section">
-          <div class="arsenal-row-header">
-            <span class="arsenal-row-label">策略</span>
-            <span class="arsenal-row-count">{{ strategyCards.length }}</span>
-          </div>
-          <div class="arsenal-carousel-wrap">
-            <Swiper
-              v-if="strategyCards.length > 0"
-              :modules="[Autoplay]"
-              :slides-per-view="'auto'"
-              :space-between="12"
-              :loop="true"
-              :grab-cursor="true"
-              :autoplay="{
-                delay: 0,
-                disableOnInteraction: false,
-                reverseDirection: false,
-                waitForTransition: false,
-                pauseOnMouseEnter: false,
-              }"
-              :speed="4500"
-              class="cards-swiper"
-              @swiper="onStrategySwiper"
-            >
-              <SwiperSlide
-                v-for="(card, idx) in [
-                  ...strategyCards,
-                  ...strategyCards,
-                  ...strategyCards,
-                ]"
-                :key="`strat-${idx}`"
-                class="cards-swiper-slide"
-                @click="openFullCard(card.id)"
-              >
-                <img
-                  :src="getCardImage(card)"
-                  :alt="card.name"
-                  class="carousel-card-img"
-                />
-                <span class="carousel-card-name">{{ card.name }}</span>
-              </SwiperSlide>
-            </Swiper>
-            <p v-else class="carousel-empty">尚無策略卡</p>
-          </div>
-        </div>
-
-        <!-- 新聞卡行（月份 accordion + fan out） -->
-        <div class="arsenal-row-section">
-          <div class="arsenal-row-header">
-            <span class="arsenal-row-label">新聞卡</span>
-            <span class="arsenal-row-count">{{
-              state.earnedNewsCards.length
-            }}</span>
-          </div>
-
-          <div
-            v-if="state.earnedNewsCards.length === 0"
-            class="carousel-empty news-empty"
-          >
-            贏得新聞戰鬥後自動收錄
-          </div>
-
-          <div v-else class="news-accordion">
-            <div
-              v-for="[month, cards] in newsCardsByMonth"
-              :key="month"
-              class="news-month-block"
-            >
-              <div class="news-month-header" @click="toggleMonth(month)">
-                <span class="news-month-label">{{ formatMonth(month) }}</span>
-                <span class="news-month-count">{{ cards.length }} 張</span>
-                <span
-                  class="news-month-arrow"
-                  :class="{ open: expandedMonth === month }"
-                  >›</span
-                >
-              </div>
-
-              <div
-                v-if="expandedMonth === month"
-                class="news-month-cards"
-                :data-month="month"
-              >
                 <div
-                  v-for="(news, idx) in cards"
-                  :key="news.id"
-                  class="news-fan-card"
-                  @click="openNewsCardPreview(news)"
+                  v-if="expandedMonth === month"
+                  class="news-month-cards"
+                  :data-month="month"
                 >
-                  <img
-                    :src="`${BASE_URL}/images/cards/news-001.jpg`"
-                    :alt="news.title"
-                    class="news-fan-img"
-                  />
-                  <span class="news-fan-title">{{ news.title }}</span>
+                  <div
+                    v-for="(news, idx) in cards"
+                    :key="news.id"
+                    class="news-fan-card"
+                    @click="openNewsCardPreview(news)"
+                  >
+                    <img
+                      :src="`${BASE_URL}/images/cards/news-001.jpg`"
+                      :alt="news.title"
+                      class="news-fan-img"
+                    />
+                    <span class="news-fan-title">{{ news.title }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 資產進化艙 -->
-        <div class="synthesis-module" ref="synthModuleEl">
-          <div class="synth-header">
-            <span class="synth-icon">⬡</span>
-            <h3 class="synth-title">資產進化艙</h3>
-          </div>
-          <div
-            v-for="recipe in SYNTHESIS_RECIPES"
-            :key="recipe.id"
-            class="recipe-card"
-          >
-            <p class="recipe-name">{{ recipe.name }}</p>
-            <div class="recipe-flow">
-              <div class="recipe-ingredients">
-                <span
-                  v-for="(id, i) in recipe.ingredients"
-                  :key="i"
-                  class="ingredient-chip"
-                >
-                  {{ getCard(id)?.name }}
-                </span>
-              </div>
-              <span class="recipe-arrow">→</span>
-              <div class="recipe-result-wrap">
-                <span class="result-chip epic">{{
-                  getCard(recipe.result)?.name
-                }}</span>
-              </div>
+          <!-- 資產進化艙 -->
+          <div class="synthesis-module" ref="synthModuleEl">
+            <div class="synth-header">
+              <span class="synth-icon">⬡</span>
+              <h3 class="synth-title">資產進化艙</h3>
             </div>
-            <p class="recipe-desc">{{ recipe.description }}</p>
-            <Transition name="modal">
-              <div
-                v-if="state.synthesisFeedback === 'success'"
-                class="synth-feedback success"
-              >
-                ✦ 融合成功！次世代晶圓已加入資產庫
+            <div
+              v-for="recipe in SYNTHESIS_RECIPES"
+              :key="recipe.id"
+              class="recipe-card"
+            >
+              <p class="recipe-name">{{ recipe.name }}</p>
+              <div class="recipe-flow">
+                <div class="recipe-ingredients">
+                  <span
+                    v-for="(id, i) in recipe.ingredients"
+                    :key="i"
+                    class="ingredient-chip"
+                  >
+                    {{ getCard(id)?.name }}
+                  </span>
+                </div>
+                <span class="recipe-arrow">→</span>
+                <div class="recipe-result-wrap">
+                  <span class="result-chip epic">{{
+                    getCard(recipe.result)?.name
+                  }}</span>
+                </div>
               </div>
-              <div
-                v-else-if="state.synthesisFeedback === 'error'"
-                class="synth-feedback error"
+              <p class="recipe-desc">{{ recipe.description }}</p>
+              <Transition name="modal">
+                <div
+                  v-if="state.synthesisFeedback === 'success'"
+                  class="synth-feedback success"
+                >
+                  ✦ 融合成功！次世代晶圓已加入資產庫
+                </div>
+                <div
+                  v-else-if="state.synthesisFeedback === 'error'"
+                  class="synth-feedback error"
+                >
+                  ✕ 材料不足（需要 3 張一般圓形晶圓）
+                </div>
+              </Transition>
+              <button
+                class="btn-synth puffy-btn"
+                @click="openSynthesisModal(recipe.id)"
               >
-                ✕ 材料不足（需要 3 張一般圓形晶圓）
-              </div>
-            </Transition>
-            <button
-              class="btn-synth puffy-btn"
-              @click="openSynthesisModal(recipe.id)"
-            >
-              ⬡ 融合資產，解鎖高階燃料
-            </button>
+                ⬡ 融合資產，解鎖高階燃料
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- ══ ENCYCLOPEDIA TAB ══ -->
-      <section v-else-if="state.activeTab === 'encyclopedia'" class="tab-panel">
-        <div class="section-title-row">
-          <h2 class="section-title">科技百科</h2>
-          <div class="encyclopedia-view-toggle">
-            <button
-              class="view-toggle-btn"
-              :class="{ active: encyclopediaView === 'list' }"
-              @click="encyclopediaView = 'list'"
-            >
-              ☰
-            </button>
-            <button
-              class="view-toggle-btn"
-              :class="{ active: encyclopediaView === 'grid' }"
-              @click="encyclopediaView = 'grid'"
-            >
-              ⊞
-            </button>
+        <!-- ══ ENCYCLOPEDIA TAB ══ -->
+        <section
+          v-else-if="state.activeTab === 'encyclopedia'"
+          class="tab-panel"
+        >
+          <div class="section-title-row">
+            <h2 class="section-title">科技百科</h2>
+            <span class="section-sub">自主刷題解鎖</span>
           </div>
-        </div>
 
-        <!-- 列表視圖 -->
-        <div v-if="encyclopediaView === 'list'" class="encyclopedia-list">
-          <div
-            v-for="item in encyclopediaItems"
-            :key="item.id"
-            class="encyclo-row"
-            :class="{ owned: item.owned, locked: !item.owned }"
-            @click="openEncyclopediaCard(item.id)"
-          >
-            <div class="encyclo-card-preview">
+          <div class="encyclopedia-grid">
+            <div
+              v-for="(item, idx) in encyclopediaItems"
+              :key="item.id"
+              class="encyclopedia-grid-item"
+              :class="{ owned: item.owned }"
+              @click="openEncyclopediaCard(item.id)"
+            >
               <img
                 :src="getCardImage(item)"
                 :alt="item.name"
-                class="encyclo-card-img"
+                class="grid-card-img"
+              />
+              <span class="grid-card-num"
+                >#{{ String(idx + 1).padStart(3, "0") }}</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ PROFILE TAB ══ -->
+        <section v-else-if="state.activeTab === 'profile'" class="tab-panel">
+          <div class="profile-hero">
+            <div class="profile-avatar">
+              <img
+                :src="`${BASE_URL}/images/user/avatar.jpg`"
+                alt="使用者頭像"
+                class="profile-avatar-img"
               />
             </div>
-            <div class="encyclo-info">
-              <span class="encyclo-name">{{ item.name }}</span>
-              <span class="encyclo-name-en">{{
-                item.owned ? item.nameEn : TOPIC_LABELS[item.strongTopic]
-              }}</span>
-              <div class="encyclo-tags">
-                <template v-if="item.owned">
-                  <span
-                    v-for="t in item.tags"
-                    :key="t"
-                    class="tag-chip small"
-                    >{{ t }}</span
-                  >
-                </template>
-                <p v-else-if="item.quiz?.teaser" class="encyclo-teaser-preview">
-                  {{ item.quiz.teaser.slice(0, 28) + "…" }}
-                </p>
+            <h2 class="profile-name">戰略家 {{ state.userId }}</h2>
+            <p class="profile-email">lee.lin@digitimes.com</p>
+          </div>
+
+          <div class="profile-stats-row">
+            <div class="stat-item">
+              <span class="stat-value">{{ state.points }}</span>
+              <span class="stat-label">◈ 積分</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-value">#{{ state.rank }}</span>
+              <span class="stat-label">🏆 排名</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-value">{{ state.streak }}天</span>
+              <span class="stat-label">🔥 連打</span>
+            </div>
+          </div>
+
+          <div class="profile-section-block">
+            <div class="profile-section-header">
+              <span>帳號設定</span>
+              <span class="section-arrow">›</span>
+            </div>
+          </div>
+
+          <div class="profile-section-block">
+            <h3 class="profile-section-title">◈ 積分兌換</h3>
+            <div class="redeem-list">
+              <div
+                v-for="item in state.redeemItems"
+                :key="item.id"
+                class="redeem-item"
+              >
+                <span class="redeem-icon">{{ item.icon }}</span>
+                <div class="redeem-info">
+                  <span class="redeem-name">{{ item.name }}</span>
+                  <span class="redeem-cost">{{ item.cost }} PTS</span>
+                </div>
+                <button class="redeem-btn" :disabled="state.points < item.cost">
+                  {{ state.points >= item.cost ? "兌換" : "不足" }}
+                </button>
               </div>
             </div>
-            <div class="encyclo-status">
-              <span v-if="item.owned" class="status-owned">✦</span>
-              <span v-else-if="item.quiz" class="status-locked">🔒 答題</span>
-              <span v-else class="status-na">—</span>
-            </div>
           </div>
-        </div>
-
-        <!-- Grid 視圖 -->
-        <div v-else class="encyclopedia-grid">
-          <div
-            v-for="(item, idx) in encyclopediaItems"
-            :key="item.id"
-            class="encyclopedia-grid-item"
-            :class="{ owned: item.owned }"
-            @click="openEncyclopediaCard(item.id)"
-          >
-            <img
-              :src="getCardImage(item)"
-              :alt="item.name"
-              class="grid-card-img"
-            />
-            <span class="grid-card-num"
-              >#{{ String(idx + 1).padStart(3, "0") }}</span
-            >
-          </div>
-        </div>
-      </section>
-
-      <!-- ══ PROFILE TAB ══ -->
-      <section v-else-if="state.activeTab === 'profile'" class="tab-panel">
-        <div class="profile-hero">
-          <div class="profile-avatar">
-            <span class="avatar-glyph">⬡</span>
-          </div>
-          <h2 class="profile-name">戰略家 {{ state.userId }}</h2>
-          <p class="profile-email">leelin36942@gmail.com</p>
-        </div>
-
-        <div class="profile-stats-row">
-          <div class="stat-item">
-            <span class="stat-value">{{ state.points }}</span>
-            <span class="stat-label">◈ 積分</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">#{{ state.rank }}</span>
-            <span class="stat-label">🏆 排名</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">{{ state.streak }}天</span>
-            <span class="stat-label">🔥 連打</span>
-          </div>
-        </div>
-
-        <div class="profile-section-block">
-          <div class="profile-section-header">
-            <span>帳號設定</span>
-            <span class="section-arrow">›</span>
-          </div>
-        </div>
-
-        <div class="profile-section-block">
-          <h3 class="profile-section-title">◈ 積分兌換</h3>
-          <div class="redeem-list">
-            <div
-              v-for="item in state.redeemItems"
-              :key="item.id"
-              class="redeem-item"
-            >
-              <span class="redeem-icon">{{ item.icon }}</span>
-              <div class="redeem-info">
-                <span class="redeem-name">{{ item.name }}</span>
-                <span class="redeem-cost">{{ item.cost }} PTS</span>
-              </div>
-              <button class="redeem-btn" :disabled="state.points < item.cost">
-                {{ state.points >= item.cost ? "兌換" : "不足" }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
 
     <!-- ── 置底漂浮選單 ── -->
@@ -913,23 +905,55 @@
               關閉
             </button>
           </template>
+
+          <!-- LOCKED 模式：未擁有且無題目，顯示解鎖提示 -->
+          <template v-else-if="state.encyclopediaModal.mode === 'locked'">
+            <div class="encq-card-detail">
+              <img
+                :src="getCardImage(state.encyclopediaModal.card)"
+                :alt="state.encyclopediaModal.card.name"
+                class="encq-detail-img encq-detail-img--locked"
+              />
+              <div>
+                <h3 class="encq-detail-name">
+                  {{ state.encyclopediaModal.card.name }}
+                </h3>
+                <p class="encq-detail-name-en">
+                  {{ state.encyclopediaModal.card.nameEn }}
+                </p>
+              </div>
+              <p class="encq-locked-hint">
+                🔒
+                {{
+                  state.encyclopediaModal.card.synthesized
+                    ? "此卡需透過「資產進化艙」融合解鎖"
+                    : "完成新聞挑戰即可解鎖此卡"
+                }}
+              </p>
+            </div>
+            <button class="btn-secondary" @click="closeEncyclopediaModal">
+              關閉
+            </button>
+          </template>
         </div>
       </div>
     </Transition>
 
-    <!-- ── 新聞卡預覽 Modal ── -->
+    <!-- ── 新聞卡預覽 Modal（與資產卡全卡同樣式）── -->
     <Transition name="modal">
       <div
         v-if="state.newsCardPreview"
-        class="modal-overlay"
+        class="fcard-overlay"
         @click.self="closeNewsCardPreview"
       >
-        <div class="news-card-preview-modal">
-          <button class="modal-close" @click="closeNewsCardPreview">✕</button>
+        <div class="fcard-simple">
+          <button class="fcard-simple-close" @click="closeNewsCardPreview">
+            ✕
+          </button>
           <img
             :src="`${BASE_URL}/images/cards/news-001.jpg`"
             :alt="state.newsCardPreview.news.title"
-            class="news-card-preview-img"
+            class="fcard-pure-img"
             @click="goToNewsFromCard(state.newsCardPreview.news)"
           />
           <p class="news-card-preview-hint">點擊卡片進入新聞</p>
@@ -1065,6 +1089,7 @@ const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const pointsEl = ref(null);
 const mainEl = ref(null);
+const mainInnerEl = ref(null);
 const combatSectionEl = ref(null);
 const synthModuleEl = ref(null);
 const synthStageEl = ref(null);
@@ -1094,13 +1119,11 @@ const anyModalOpen = computed(
 // ── 首次進入遮蓋 ──────────────────────────────────────────────────────
 const showIntro = ref(true);
 
-// ── 百科視圖切換 ──────────────────────────────────────────────────────
-const encyclopediaView = ref("list");
-
 // ── Swiper 實例（用於 modal open/close 時恢復 autoplay）──────────────
 let assetSwiperInstance = null;
 let techSwiperInstance = null;
 let strategySwiperInstance = null;
+let swiperWatchdogId = null;
 
 function onAssetSwiper(swiper) {
   assetSwiperInstance = swiper;
@@ -1110,6 +1133,24 @@ function onTechSwiper(swiper) {
 }
 function onStrategySwiper(swiper) {
   strategySwiperInstance = swiper;
+}
+
+// 看門狗：拖曳、捲動、展開月份框等互動偶爾會讓 autoplay 卡住，定期檢查並重啟。
+// 比對前後兩次 translate：即使 running 為 true，位置沒動就代表 transition 卡死。
+function kickSwiperAutoplay(swiper) {
+  if (!swiper || swiper.destroyed || !swiper.autoplay) return;
+  if (swiper.touchEventsData?.isTouched) return; // 使用者拖曳中，不介入
+  const cur = swiper.translate;
+  const prev = swiper.__wdPrevTranslate;
+  swiper.__wdPrevTranslate = cur;
+  if (!swiper.autoplay.running) {
+    swiper.autoplay.start();
+  } else if (swiper.autoplay.paused) {
+    swiper.autoplay.resume();
+  } else if (prev !== undefined && prev === cur) {
+    swiper.autoplay.stop();
+    swiper.autoplay.start();
+  }
 }
 
 // ── stack snap scroll（GSAP 吸附動畫） ──────────────────────────────────────
@@ -1123,11 +1164,12 @@ let stackTouchY = 0;
 let stackTouchDelta = 0;
 
 // ── 主題色（依新聞 topic 動態變換）─────────────────────────────────────────
+// 粉彩淺色漸層（文字改用深色）
 const topicColors = {
-  compute: "linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)",
-  connect: "linear-gradient(135deg, #0891B2 0%, #06B6D4 100%)",
-  intelligence: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)",
-  sustainability: "linear-gradient(135deg, #059669 0%, #10B981 100%)",
+  compute: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
+  connect: "linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 100%)",
+  intelligence: "linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)",
+  sustainability: "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)",
 };
 
 const newsHeaderStyle = computed(() => ({
@@ -1277,10 +1319,13 @@ function formatMonth(month) {
 async function toggleMonth(month) {
   if (expandedMonth.value === month) {
     expandedMonth.value = null;
+    await nextTick();
+    lenis?.resize();
     return;
   }
   expandedMonth.value = month;
   await nextTick();
+  lenis?.resize();
   const container = document.querySelector(`[data-month="${month}"]`);
   const items = container?.querySelectorAll(".news-fan-card");
   if (!items?.length) return;
@@ -1326,6 +1371,12 @@ function goToArsenal() {
   });
 }
 
+// 點 logo：不論在哪（含新聞內頁）都回到新聞總覽
+function goBrandHome() {
+  closeNewsDetail();
+  switchTab("combat");
+}
+
 function goToNewsFromCard(news) {
   closeNewsCardPreview();
   switchTab("combat");
@@ -1346,6 +1397,11 @@ function switchTab(tabId) {
   snapIndex.value = 0;
   isSnapping = false;
   accumWheel = 0;
+  // 內容高度改變，更新 Lenis 捲動範圍並回到頂部
+  nextTick(() => {
+    lenis?.resize();
+    lenis?.scrollTo(0, { immediate: true });
+  });
 }
 
 // ── stack snap scroll handlers ────────────────────────────────────────────────
@@ -1626,10 +1682,12 @@ onMounted(() => {
   });
 
   // Lenis 平滑滾動（非 stack view 用）
-  if (mainEl.value) {
+  // content 必須是內層元素：wrapper 高度固定，若兩者同元素
+  // ResizeObserver 偵測不到內容增長，捲動範圍會卡在舊值（無法下滑）
+  if (mainEl.value && mainInnerEl.value) {
     lenis = new Lenis({
       wrapper: mainEl.value,
-      content: mainEl.value,
+      content: mainInnerEl.value,
       lerp: 0.12,
       smoothWheel: true,
     });
@@ -1647,11 +1705,20 @@ onMounted(() => {
     };
     lenisRafId = requestAnimationFrame(raf);
   }
+
+  // Swiper autoplay 看門狗：每 2 秒確認輪播持續運轉
+  swiperWatchdogId = setInterval(() => {
+    if (state.activeTab !== "arsenal" || anyModalOpen.value) return;
+    kickSwiperAutoplay(assetSwiperInstance);
+    kickSwiperAutoplay(techSwiperInstance);
+    kickSwiperAutoplay(strategySwiperInstance);
+  }, 2000);
 });
 
 onUnmounted(() => {
   if (cooldownInterval) clearInterval(cooldownInterval);
   if (nowInterval) clearInterval(nowInterval);
+  if (swiperWatchdogId) clearInterval(swiperWatchdogId);
   if (lenisRafId) cancelAnimationFrame(lenisRafId);
   lenis?.destroy();
 });

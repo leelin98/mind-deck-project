@@ -246,9 +246,8 @@ function openEncyclopediaCard(cardId) {
   const card = state.cards.find(c => c.id === cardId)
   if (!card) return
   const quiz = QUIZZES.find(q => q.cardId === cardId)
-  // 未擁有且無答題資料：不開 modal
-  if (!card.owned && !quiz) return
-  const mode = card.owned ? 'review' : 'unlock'
+  // mode：已擁有=review、未擁有有題目=unlock、未擁有無題目=locked（顯示解鎖提示）
+  const mode = card.owned ? 'review' : quiz ? 'unlock' : 'locked'
   const cooldownEnd = mode === 'review' ? (state.quizCooldowns[cardId] ?? null) : null
   state.encyclopediaModal = { card, quiz, mode, answer: null, cooldownEnd }
 }
