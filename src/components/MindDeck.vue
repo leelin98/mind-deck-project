@@ -1,11 +1,10 @@
 <template>
   <div class="mind-deck">
-    <!-- 首次進入遮蓋（全螢幕固定） -->
+    <!-- 首次進入遮蓋（蓋住手機版範圍，純色底待自行設計） -->
     <Transition name="modal">
       <div
         v-if="showIntro"
         class="intro-cover"
-        :style="{ backgroundImage: `url(${BASE_URL}/cover.png)` }"
         @click.self="showIntro = false"
       ></div>
     </Transition>
@@ -94,7 +93,7 @@
                   />
                   <div class="stack-hero-overlay"></div>
                   <span class="stack-badge today-badge stack-hero-badge"
-                    >今日挑戰</span
+                    >今日任務</span
                   >
                 </div>
                 <div class="stack-card-body">
@@ -419,7 +418,7 @@
         <section v-else-if="state.activeTab === 'arsenal'" class="arsenal-tab">
           <!-- 知識庫大標 -->
           <div class="section-title-row arsenal-section-title">
-            <h2 class="section-title">我的知識庫</h2>
+            <h2 class="section-title">我的腦補包</h2>
             <span class="section-sub"
               >{{ ownedCards.length }} 張卡片已收錄</span
             >
@@ -446,7 +445,7 @@
                   waitForTransition: false,
                   pauseOnMouseEnter: false,
                 }"
-                :speed="4500"
+                :speed="2200"
                 class="cards-swiper"
                 @swiper="onAssetSwiper"
               >
@@ -496,7 +495,7 @@
                   waitForTransition: false,
                   pauseOnMouseEnter: false,
                 }"
-                :speed="4500"
+                :speed="2200"
                 class="cards-swiper"
                 @swiper="onTechSwiper"
               >
@@ -543,7 +542,7 @@
                   waitForTransition: false,
                   pauseOnMouseEnter: false,
                 }"
-                :speed="4500"
+                :speed="2200"
                 class="cards-swiper"
                 @swiper="onStrategySwiper"
               >
@@ -684,13 +683,18 @@
           class="tab-panel"
         >
           <div class="section-title-row">
-            <h2 class="section-title">科技百科</h2>
-            <span class="section-sub">自主刷題解鎖</span>
+            <h2 class="section-title">科技圖鑑​​</h2>
+            <button
+              class="encyclo-sort-btn"
+              @click="encycloSortDesc = !encycloSortDesc"
+            >
+              {{ encycloSortDesc ? "↓ 最新在前" : "↑ 最舊在前" }}
+            </button>
           </div>
 
           <div class="encyclopedia-grid">
             <div
-              v-for="(item, idx) in encyclopediaItems"
+              v-for="item in encyclopediaSorted"
               :key="item.id"
               class="encyclopedia-grid-item"
               :class="{ owned: item.owned, locked: !item.owned }"
@@ -705,7 +709,7 @@
                 <span v-if="!item.owned" class="grid-card-lock">🔒</span>
               </div>
               <span class="grid-card-num"
-                >#{{ String(idx + 1).padStart(3, "0") }}</span
+                >#{{ String(item.num).padStart(3, "0") }}</span
               >
             </div>
           </div>
@@ -777,7 +781,7 @@
       class="bottom-nav"
       :class="{
         'nav-show': navShow,
-        'nav-hidden': navHidden || anyModalOpen || !!state.newsDetailMode,
+        'nav-hidden': navHidden || anyModalOpen,
       }"
     >
       <div class="bottom-nav-inner">
@@ -788,7 +792,14 @@
           :class="{ active: state.activeTab === tab.id }"
           @click="switchTab(tab.id)"
         >
-          <span class="bottom-tab-icon">{{ tab.icon }}</span>
+          <img
+            v-if="!navIconFailed[tab.id]"
+            :src="`${BASE_URL}/images/ui/${tab.icon}`"
+            :alt="tab.label"
+            class="bottom-tab-icon-img"
+            @error="navIconFailed[tab.id] = true"
+          />
+          <span v-else class="bottom-tab-icon">{{ tab.fallback }}</span>
           <span class="bottom-tab-label">{{ tab.label }}</span>
         </button>
       </div>
@@ -1040,7 +1051,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
+import {
+  ref,
+  reactive,
+  computed,
+  watch,
+  nextTick,
+  onMounted,
+  onUnmounted,
+} from "vue";
 import { gsap } from "gsap";
 import Lenis from "lenis";
 import { Swiper, SwiperSlide } from "swiper/vue";
@@ -1078,11 +1097,18 @@ const {
   closeSynthModal,
 } = useGameStore();
 
+// icon：把對應檔名的 svg/png 丟進 public/images/ui/ 即自動套用；
+// 圖檔載入失敗時退回 fallback 字元
 const TABS = [
-  { id: "combat", icon: "⚔", label: "每日挑戰" },
-  { id: "arsenal", icon: "⬡", label: "我的資產" },
-  { id: "encyclopedia", icon: "◈", label: "科技百科" },
-  { id: "profile", icon: "👤", label: "我的" },
+  { id: "combat", icon: "nav-combat.svg", fallback: "⚔", label: "每日挑戰" },
+  { id: "arsenal", icon: "nav-arsenal.svg", fallback: "⬡", label: "我的資產" },
+  {
+    id: "encyclopedia",
+    icon: "nav-encyclopedia.svg",
+    fallback: "◈",
+    label: "科技圖鑑​​",
+  },
+  { id: "profile", icon: "nav-profile.svg", fallback: "👤", label: "我的" },
 ];
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -1118,6 +1144,19 @@ const anyModalOpen = computed(
 
 // ── 首次進入遮蓋 ──────────────────────────────────────────────────────
 const showIntro = ref(true);
+
+// ── bottom-nav icon 圖檔載入失敗記錄（退回 fallback 字元）──────────
+const navIconFailed = reactive({});
+
+// ── 科技圖鑑排序（編號固定，預設最新＝編號大的在前）────────────────
+const encycloSortDesc = ref(true);
+const encyclopediaSorted = computed(() => {
+  const items = encyclopediaItems.value.map((item, idx) => ({
+    ...item,
+    num: idx + 1,
+  }));
+  return encycloSortDesc.value ? items.reverse() : items;
+});
 
 // ── Swiper 實例（用於 modal open/close 時恢復 autoplay）──────────────
 let assetSwiperInstance = null;
@@ -1692,8 +1731,13 @@ onMounted(() => {
       smoothWheel: true,
     });
 
-    lenis.on("scroll", ({ scroll, direction }) => {
+    lenis.on("scroll", ({ scroll, direction, limit }) => {
       if (state.activeTab === "combat" && !state.newsDetailMode) return;
+      // 新聞內頁：接近底部（手牌區）時 nav 保持隱藏，避免擋到卡牌
+      if (state.newsDetailMode && limit - scroll < 360) {
+        navHidden.value = true;
+        return;
+      }
       if (direction > 0 && scroll > 60) navHidden.value = true;
       else if (direction < 0) navHidden.value = false;
       lastScrollY = scroll;

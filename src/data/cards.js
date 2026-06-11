@@ -176,22 +176,6 @@ export const CARDS = [
     owned: true,
     sponsor: true,
   },
-  {
-    id: 'card_012',
-    name: '黃銘章',
-    nameEn: 'Research Center Director',
-    rarity: 'epic',
-    type: 'strategy',
-    strongTopic: 'compute',
-    power: -10,
-    tags: ['#半導體', '#顯示'],
-    imagePlaceholder: 'figure-huang',
-    cardImage: 'figure-sponsored-002.jpg',
-    accentColor: '#2563EB',
-    description: 'DIGITIMES 研究中心總監，專精半導體與顯示產業研究，提供第一線的產業趨勢洞察。',
-    owned: true,
-    sponsor: true,
-  },
 ]
 
 export const SYNTHESIS_RECIPES = [
