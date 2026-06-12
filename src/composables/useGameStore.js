@@ -1,18 +1,26 @@
-import { reactive, computed } from 'vue'
-import { CARDS, SYNTHESIS_RECIPES } from '../data/cards.js'
-import { ALL_NEWS, NEWS_CARDS, COMBAT_FORMULA, TOPIC_LABELS, TYPE_LABELS, PREV_NEWS, ARCHIVED_NEWS } from '../data/combat.js'
-import { QUIZZES } from '../data/quizzes.js'
+import { reactive, computed } from "vue";
+import { CARDS, SYNTHESIS_RECIPES } from "../data/cards.js";
+import {
+  ALL_NEWS,
+  NEWS_CARDS,
+  COMBAT_FORMULA,
+  TOPIC_LABELS,
+  TYPE_LABELS,
+  PREV_NEWS,
+  ARCHIVED_NEWS,
+} from "../data/combat.js";
+import { QUIZZES } from "../data/quizzes.js";
 
 // ─── Singleton state ──────────────────────────────────────────────────────────
 const state = reactive({
   // Player
-  userId: '#066',
+  userId: "#066",
   points: 100,
   streak: 7,
   rank: 156,
 
   // Cards
-  cards: CARDS.map(c => ({ ...c })),
+  cards: CARDS.map((c) => ({ ...c })),
 
   // 今日新聞（清單頁標題用）
   todayNews: NEWS_CARDS[0],
@@ -27,11 +35,11 @@ const state = reactive({
   selectedSlots: [null, null, null],
 
   // Combat state
-  combatPhase: 'select', // 'select' | 'reveal' | 'result' | 'fail' | 'antidote'
+  combatPhase: "select", // 'select' | 'reveal' | 'result' | 'fail' | 'antidote'
   combatResult: null,
 
   // Antidote
-  antidoteInput: '',
+  antidoteInput: "",
   antidoteError: false,
 
   // Term card modal（新聞專有名詞解鎖）
@@ -44,7 +52,7 @@ const state = reactive({
   // 答題冷卻時間（key: cardId, value: cooldown end timestamp ms）
   quizCooldowns: {},
 
-  // Full card overlay（我的資產點擊查看）
+  // Full card overlay（我的腦補包​​點擊查看）
   fullCardModal: null, // { card }
 
   // Synthesis
@@ -54,7 +62,7 @@ const state = reactive({
   // 新聞鎖定（key: newsId, value: 解鎖時間 ms）
   newsLocks: {},
   // 贏得的新聞卡（預設收錄四五月歸檔新聞）
-  earnedNewsCards: ARCHIVED_NEWS.map(n => ({ ...n, earnedAt: 0 })),
+  earnedNewsCards: ARCHIVED_NEWS.map((n) => ({ ...n, earnedAt: 0 })),
 
   // 新聞卡預覽 Modal
   newsCardPreview: null, // { news }
@@ -63,89 +71,91 @@ const state = reactive({
   lastSynthesizedCardId: null,
 
   // Active view
-  activeTab: 'combat',
+  activeTab: "combat",
 
   // 積分兌換項目（靜態 placeholder）
   redeemItems: [
-    { id: 'r1', name: 'VIP 媒體訂閱 3個月', cost: 500, icon: '📰' },
-    { id: 'r2', name: '論壇實體 VIP 門票', cost: 1000, icon: '🎫' },
-    { id: 'r3', name: 'B2B 科技廠聯名周邊', cost: 800, icon: '🎁' },
+    { id: "r1", name: "VIP 媒體訂閱 3個月", cost: 500, icon: "📰" },
+    { id: "r2", name: "論壇實體 VIP 門票", cost: 1000, icon: "🎫" },
+    { id: "r3", name: "B2B 科技廠聯名周邊", cost: 800, icon: "🎁" },
   ],
-})
+});
 
 // ─── Getters ──────────────────────────────────────────────────────────────────
-const ownedCards = computed(() => state.cards.filter(c => c.owned))
+const ownedCards = computed(() => state.cards.filter((c) => c.owned));
 
 const selectedCards = computed(() =>
-  state.selectedSlots.map(id => id ? state.cards.find(c => c.id === id) : null)
-)
+  state.selectedSlots.map((id) =>
+    id ? state.cards.find((c) => c.id === id) : null,
+  ),
+);
 
 const encyclopediaItems = computed(() =>
-  state.cards.map(c => ({
+  state.cards.map((c) => ({
     ...c,
-    quiz: QUIZZES.find(q => q.cardId === c.id) || null,
-  }))
-)
+    quiz: QUIZZES.find((q) => q.cardId === c.id) || null,
+  })),
+);
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 function selectSlot(slotIndex, cardId) {
-  const existingSlot = state.selectedSlots.indexOf(cardId)
+  const existingSlot = state.selectedSlots.indexOf(cardId);
   if (existingSlot !== -1 && existingSlot !== slotIndex) {
-    state.selectedSlots[existingSlot] = null
+    state.selectedSlots[existingSlot] = null;
   }
-  state.selectedSlots[slotIndex] = cardId
+  state.selectedSlots[slotIndex] = cardId;
 }
 
 function removeSlot(slotIndex) {
-  state.selectedSlots[slotIndex] = null
+  state.selectedSlots[slotIndex] = null;
 }
 
 function lockNews(newsId) {
-  state.newsLocks[newsId] = Date.now() + 3 * 60 * 60 * 1000
+  state.newsLocks[newsId] = Date.now() + 3 * 60 * 60 * 1000;
 }
 
 function openNewsDetail(newsId) {
-  const news = ALL_NEWS.find(n => n.id === newsId)
-  if (!news) return
-  state.activeNews = news
-  state.newsDetailMode = newsId
+  const news = ALL_NEWS.find((n) => n.id === newsId);
+  if (!news) return;
+  state.activeNews = news;
+  state.newsDetailMode = newsId;
   // 進入詳細頁時重置戰鬥
-  state.selectedSlots = [null, null, null]
-  state.combatPhase = 'select'
-  state.combatResult = null
-  state.antidoteInput = ''
-  state.antidoteError = false
+  state.selectedSlots = [null, null, null];
+  state.combatPhase = "select";
+  state.combatResult = null;
+  state.antidoteInput = "";
+  state.antidoteError = false;
 }
 
 function closeNewsDetail() {
-  state.newsDetailMode = null
-  state.selectedSlots = [null, null, null]
-  state.combatPhase = 'select'
-  state.combatResult = null
-  state.antidoteInput = ''
-  state.antidoteError = false
+  state.newsDetailMode = null;
+  state.selectedSlots = [null, null, null];
+  state.combatPhase = "select";
+  state.combatResult = null;
+  state.antidoteInput = "";
+  state.antidoteError = false;
 }
 
 function startCombat() {
-  if (state.selectedSlots.some(s => s === null)) return
-  state.combatPhase = 'reveal'
+  if (state.selectedSlots.some((s) => s === null)) return;
+  state.combatPhase = "reveal";
 
-  const news = state.activeNews
-  const steps = []
-  let finalDelta = 0
-  const matched = []
+  const news = state.activeNews;
+  const steps = [];
+  let finalDelta = 0;
+  const matched = [];
 
-  steps.push({ label: '新聞難度', value: news.difficulty, sign: '' })
+  steps.push({ label: "新聞難度", value: news.difficulty, sign: "" });
 
   state.selectedSlots.forEach((cardId, i) => {
-    const card = state.cards.find(c => c.id === cardId)
-    if (!card) return
+    const card = state.cards.find((c) => c.id === cardId);
+    if (!card) return;
 
-    const topicMatch = card.strongTopic === news.topic
-    const multiplier = topicMatch ? COMBAT_FORMULA.matchBonus : 1
-    const delta = card.power * multiplier
-    finalDelta += delta
+    const topicMatch = card.strongTopic === news.topic;
+    const multiplier = topicMatch ? COMBAT_FORMULA.matchBonus : 1;
+    const delta = card.power * multiplier;
+    finalDelta += delta;
 
     const step = {
       label: `卡片 ${i + 1}：${card.name}`,
@@ -155,218 +165,233 @@ function startCombat() {
       bonusReason: topicMatch
         ? `${card.name} 屬「${TYPE_LABELS[card.type] || card.type}」類，擅長 ${TOPIC_LABELS[card.strongTopic]}，與本篇新聞主題高度契合`
         : null,
-      sign: '',
-    }
-    steps.push(step)
-    if (topicMatch) matched.push(card.name)
-  })
+      sign: "",
+    };
+    steps.push(step);
+    if (topicMatch) matched.push(card.name);
+  });
 
-  const pointsDelta = Math.round(Math.abs(finalDelta))
-  const remainder = news.difficulty + finalDelta
+  const pointsDelta = Math.round(Math.abs(finalDelta));
+  const remainder = news.difficulty + finalDelta;
 
-  state.combatResult = { steps, finalDelta, remainder, pointsDelta, matched }
+  state.combatResult = { steps, finalDelta, remainder, pointsDelta, matched };
 
   setTimeout(() => {
     if (remainder <= 0) {
-      state.points += pointsDelta
-      state.combatPhase = 'result'
-      if (!state.earnedNewsCards.find(n => n.id === state.activeNews.id)) {
-        state.earnedNewsCards.push({ ...state.activeNews, earnedAt: Date.now() })
+      state.points += pointsDelta;
+      state.combatPhase = "result";
+      if (!state.earnedNewsCards.find((n) => n.id === state.activeNews.id)) {
+        state.earnedNewsCards.push({
+          ...state.activeNews,
+          earnedAt: Date.now(),
+        });
       }
-      state.activeNews.completed = true
+      state.activeNews.completed = true;
     } else {
-      lockNews(state.activeNews.id)
-      state.combatPhase = 'fail'
+      lockNews(state.activeNews.id);
+      state.combatPhase = "fail";
     }
-  }, 3200)
+  }, 3200);
 }
 
 function submitAntidote() {
-  const keyword = state.antidoteInput.trim()
+  const keyword = state.antidoteInput.trim();
   if (keyword === state.activeNews?.antidoteKeyword) {
-    const lockedRare = state.cards.find(c => !c.owned && !c.synthesized && !c.sponsor)
-    if (lockedRare) lockedRare.owned = true
-    state.points += 15
-    state.antidoteError = false
-    state.combatPhase = 'result'
-    state.combatResult = { ...state.combatResult, antidoteSuccess: true }
-    if (!state.earnedNewsCards.find(n => n.id === state.activeNews?.id)) {
-      state.earnedNewsCards.push({ ...state.activeNews, earnedAt: Date.now() })
+    const lockedRare = state.cards.find(
+      (c) => !c.owned && !c.synthesized && !c.sponsor,
+    );
+    if (lockedRare) lockedRare.owned = true;
+    state.points += 15;
+    state.antidoteError = false;
+    state.combatPhase = "result";
+    state.combatResult = { ...state.combatResult, antidoteSuccess: true };
+    if (!state.earnedNewsCards.find((n) => n.id === state.activeNews?.id)) {
+      state.earnedNewsCards.push({ ...state.activeNews, earnedAt: Date.now() });
     }
-    if (state.activeNews) state.activeNews.completed = true
+    if (state.activeNews) state.activeNews.completed = true;
   } else {
-    state.antidoteError = true
+    state.antidoteError = true;
   }
 }
 
 function resetCombat() {
-  state.selectedSlots = [null, null, null]
-  state.combatPhase = 'select'
-  state.combatResult = null
-  state.antidoteInput = ''
-  state.antidoteError = false
+  state.selectedSlots = [null, null, null];
+  state.combatPhase = "select";
+  state.combatResult = null;
+  state.antidoteInput = "";
+  state.antidoteError = false;
 }
 
 // 新聞文章專有名詞卡 modal → 直接開百科 modal
 function openTermCard(word) {
-  const term = state.activeNews?.highlightedTerm
-  if (!term || term.word !== word) return
-  openEncyclopediaCard(term.cardId)
+  const term = state.activeNews?.highlightedTerm;
+  if (!term || term.word !== word) return;
+  openEncyclopediaCard(term.cardId);
 }
 
 function startTermQuiz() {
-  if (state.termCardModal) state.termCardModal.phase = 'quiz'
+  if (state.termCardModal) state.termCardModal.phase = "quiz";
 }
 
 function answerTermCard(optionLabel) {
-  if (!state.termCardModal) return
-  state.termCardModal.answer = optionLabel
+  if (!state.termCardModal) return;
+  state.termCardModal.answer = optionLabel;
 }
 
 function submitTermCard() {
-  if (!state.termCardModal?.answer) return
+  if (!state.termCardModal?.answer) return;
   const correct = state.termCardModal.quiz?.options.find(
-    o => o.label === state.termCardModal.answer
-  )?.correct
+    (o) => o.label === state.termCardModal.answer,
+  )?.correct;
   if (correct) {
-    const card = state.cards.find(c => c.id === state.termCardModal.card.id)
-    if (card) card.owned = true
-    state.points += 10
-    setTimeout(() => { state.termCardModal = null }, 1500)
+    const card = state.cards.find((c) => c.id === state.termCardModal.card.id);
+    if (card) card.owned = true;
+    state.points += 10;
+    setTimeout(() => {
+      state.termCardModal = null;
+    }, 1500);
   }
 }
 
 function closeTermCard() {
-  state.termCardModal = null
+  state.termCardModal = null;
 }
 
 // ── 百科 Modal（新版，取代舊 activeQuiz）─────────────────────────────────────
 
 function openEncyclopediaCard(cardId) {
-  const card = state.cards.find(c => c.id === cardId)
-  if (!card) return
+  const card = state.cards.find((c) => c.id === cardId);
+  if (!card) return;
   // 已擁有：直接顯示整張卡（與知識庫一致）
   if (card.owned) {
-    openFullCard(cardId)
-    return
+    openFullCard(cardId);
+    return;
   }
-  const quiz = QUIZZES.find(q => q.cardId === cardId)
+  const quiz = QUIZZES.find((q) => q.cardId === cardId);
   // mode：有題目=unlock（答題解鎖）、無題目=locked（顯示解鎖提示）
-  const mode = quiz ? 'unlock' : 'locked'
-  const cooldownEnd = state.quizCooldowns[cardId] ?? null
-  state.encyclopediaModal = { card, quiz, mode, answer: null, cooldownEnd }
+  const mode = quiz ? "unlock" : "locked";
+  const cooldownEnd = state.quizCooldowns[cardId] ?? null;
+  state.encyclopediaModal = { card, quiz, mode, answer: null, cooldownEnd };
 }
 
 function answerEncyclopediaQuiz(optionLabel) {
-  if (!state.encyclopediaModal) return
-  state.encyclopediaModal.answer = optionLabel
+  if (!state.encyclopediaModal) return;
+  state.encyclopediaModal.answer = optionLabel;
 
   const correct = state.encyclopediaModal.quiz?.options.find(
-    o => o.label === optionLabel
-  )?.correct
+    (o) => o.label === optionLabel,
+  )?.correct;
 
   if (correct) {
-    const card = state.cards.find(c => c.id === state.encyclopediaModal.card.id)
-    if (card) card.owned = true
-    state.points += 10
-    delete state.quizCooldowns[state.encyclopediaModal.card.id]
-    state.encyclopediaModal.cooldownEnd = null
+    const card = state.cards.find(
+      (c) => c.id === state.encyclopediaModal.card.id,
+    );
+    if (card) card.owned = true;
+    state.points += 10;
+    delete state.quizCooldowns[state.encyclopediaModal.card.id];
+    state.encyclopediaModal.cooldownEnd = null;
   } else {
     // 答錯：鎖定 30 分鐘無法作答（仍可開啟查看題目）
-    const cooldownEnd = Date.now() + 30 * 60 * 1000
-    state.quizCooldowns[state.encyclopediaModal.card.id] = cooldownEnd
-    state.encyclopediaModal.cooldownEnd = cooldownEnd
+    const cooldownEnd = Date.now() + 30 * 60 * 1000;
+    state.quizCooldowns[state.encyclopediaModal.card.id] = cooldownEnd;
+    state.encyclopediaModal.cooldownEnd = cooldownEnd;
   }
 }
 
 function closeEncyclopediaModal() {
-  state.encyclopediaModal = null
+  state.encyclopediaModal = null;
 }
 
 // ── 新聞卡預覽 Modal ──────────────────────────────────────────────────────────
 
 function openNewsCardPreview(news) {
-  state.newsCardPreview = { news }
+  state.newsCardPreview = { news };
 }
 
 function closeNewsCardPreview() {
-  state.newsCardPreview = null
+  state.newsCardPreview = null;
 }
 
-// ── 我的資產 Full Card Modal ──────────────────────────────────────────────────
+// ── 我的腦補包​​ Full Card Modal ──────────────────────────────────────────────────
 
 function openFullCard(cardId) {
-  const card = state.cards.find(c => c.id === cardId)
-  if (card) state.fullCardModal = { card }
+  const card = state.cards.find((c) => c.id === cardId);
+  if (card) state.fullCardModal = { card };
 }
 
 function closeFullCard() {
-  state.fullCardModal = null
+  state.fullCardModal = null;
 }
 
 // ── 合成 Overlay ──────────────────────────────────────────────────────────────
 
 function openSynthesisModal(recipeId) {
-  const recipe = SYNTHESIS_RECIPES.find(r => r.id === recipeId)
-  if (!recipe) return
-  state.synthModal = { recipeId, phase: 'select' }
+  const recipe = SYNTHESIS_RECIPES.find((r) => r.id === recipeId);
+  if (!recipe) return;
+  state.synthModal = { recipeId, phase: "select" };
 }
 
 function triggerSynthesisAnimate() {
-  if (state.synthModal) state.synthModal.phase = 'animate'
+  if (state.synthModal) state.synthModal.phase = "animate";
 }
 
 function completeSynthesis() {
-  if (!state.synthModal) return
-  const { recipeId } = state.synthModal
-  attemptSynthesis(recipeId)
-  state.synthModal = null
-  state.activeTab = 'arsenal'
+  if (!state.synthModal) return;
+  const { recipeId } = state.synthModal;
+  attemptSynthesis(recipeId);
+  state.synthModal = null;
+  state.activeTab = "arsenal";
 }
 
 function closeSynthModal() {
-  if (state.synthModal?.phase === 'animate') return
-  state.synthModal = null
+  if (state.synthModal?.phase === "animate") return;
+  state.synthModal = null;
 }
 
 // ── 合成 ──────────────────────────────────────────────────────────────────────
 
 function attemptSynthesis(recipeId) {
-  const recipe = SYNTHESIS_RECIPES.find(r => r.id === recipeId)
-  if (!recipe) return
+  const recipe = SYNTHESIS_RECIPES.find((r) => r.id === recipeId);
+  if (!recipe) return;
 
-  const ingredientCounts = {}
+  const ingredientCounts = {};
   for (const id of recipe.ingredients) {
-    ingredientCounts[id] = (ingredientCounts[id] || 0) + 1
+    ingredientCounts[id] = (ingredientCounts[id] || 0) + 1;
   }
 
   for (const [cardId, needed] of Object.entries(ingredientCounts)) {
-    const available = state.cards.filter(c => c.id === cardId && c.owned).length
+    const available = state.cards.filter(
+      (c) => c.id === cardId && c.owned,
+    ).length;
     if (available < needed) {
-      state.synthesisFeedback = 'error'
-      setTimeout(() => { state.synthesisFeedback = null }, 2000)
-      return
+      state.synthesisFeedback = "error";
+      setTimeout(() => {
+        state.synthesisFeedback = null;
+      }, 2000);
+      return;
     }
   }
 
   for (const [cardId, needed] of Object.entries(ingredientCounts)) {
-    let removed = 0
+    let removed = 0;
     for (const card of state.cards) {
       if (card.id === cardId && card.owned && removed < needed) {
-        card.owned = false
-        removed++
+        card.owned = false;
+        removed++;
       }
     }
   }
 
-  const resultCard = state.cards.find(c => c.id === recipe.result)
+  const resultCard = state.cards.find((c) => c.id === recipe.result);
   if (resultCard) {
-    resultCard.owned = true
-    state.lastSynthesizedCardId = recipe.result
+    resultCard.owned = true;
+    state.lastSynthesizedCardId = recipe.result;
   }
-  state.points += 5
-  state.synthesisFeedback = 'success'
-  setTimeout(() => { state.synthesisFeedback = null }, 2500)
+  state.points += 5;
+  state.synthesisFeedback = "success";
+  setTimeout(() => {
+    state.synthesisFeedback = null;
+  }, 2500);
 }
 
 export function useGameStore() {
@@ -405,5 +430,5 @@ export function useGameStore() {
     closeSynthModal,
     attemptSynthesis,
     lockNews,
-  }
+  };
 }
