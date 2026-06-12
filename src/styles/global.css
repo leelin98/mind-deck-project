@@ -2784,22 +2784,22 @@ body::before {
   z-index: 10000;
   background: #ffe9a8;
   overflow: hidden; /* 裁掉 stage 超出畫面的部分 */
-  /* 圓形破洞遮罩：--cover-hole 為洞的半徑，從按鈕中心向外擴 */
+}
+/* 圓形揭開離場：洞由按鈕中心向外擴大，露出底下頁面。
+   mask 只在離場期間套用——常駐 mask 在行動版 WebKit 會把整層渲染成透明 */
+.intro-leave-active {
   --cover-hole: 0px;
+  transition: --cover-hole 0.8s cubic-bezier(0.65, 0, 0.35, 1);
   -webkit-mask-image: radial-gradient(
     circle at 50% 68%,
-    transparent calc(var(--cover-hole) - 2px),
+    transparent var(--cover-hole),
     #000 var(--cover-hole)
   );
   mask-image: radial-gradient(
     circle at 50% 68%,
-    transparent calc(var(--cover-hole) - 2px),
+    transparent var(--cover-hole),
     #000 var(--cover-hole)
   );
-}
-/* 圓形揭開離場：洞由按鈕中心向外擴大，露出底下頁面 */
-.intro-leave-active {
-  transition: --cover-hole 0.8s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .intro-leave-to {
   --cover-hole: 160dvh;

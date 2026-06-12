@@ -59,12 +59,12 @@
     <header class="top-nav">
       <div class="nav-brand" @click="goBrandHome">
         <img
-          :src="`${BASE_URL}/images/ui/logo-icon.png`"
+          :src="`${BASE_URL}/images/ui/logo-icon.webp`"
           alt=""
           class="brand-icon-img"
         />
         <img
-          :src="`${BASE_URL}/images/ui/logo.png`"
+          :src="`${BASE_URL}/images/ui/logo.webp`"
           alt="腦補計畫"
           class="brand-logo-img"
         />
@@ -1155,15 +1155,15 @@ const {
 // icon：把對應檔名的 svg/png 丟進 public/images/ui/ 即自動套用；
 // 圖檔載入失敗時退回 fallback 字元
 const TABS = [
-  { id: "combat", icon: "nav-combat.svg", fallback: "⚔", label: "每日挑戰" },
-  { id: "arsenal", icon: "nav-arsenal.svg", fallback: "⬡", label: "我的資產" },
+  { id: "combat", icon: "nav-combat.webp", fallback: "⚔", label: "每日挑戰" },
+  { id: "arsenal", icon: "nav-arsenal.webp", fallback: "⬡", label: "我的資產" },
   {
     id: "encyclopedia",
-    icon: "nav-encyclopedia.svg",
+    icon: "nav-encyclopedia.webp",
     fallback: "◈",
     label: "科技圖鑑​​",
   },
-  { id: "profile", icon: "nav-profile.svg", fallback: "👤", label: "我的" },
+  { id: "profile", icon: "nav-profile.webp", fallback: "👤", label: "我的" },
 ];
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
