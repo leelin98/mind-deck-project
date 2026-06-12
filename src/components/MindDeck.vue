@@ -5,48 +5,48 @@
       <div v-if="showIntro" class="intro-cover">
         <div v-if="coverReady" class="cover-stage">
           <img
-            :src="`${BASE_URL}/images/cover/bg.png`"
+            :src="`${BASE_URL}/images/cover/bg.webp`"
             alt=""
             class="cover-bg"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-brain.png`"
+            :src="`${BASE_URL}/images/cover/deco-brain.webp`"
             alt=""
             class="cover-deco cover-brain"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-tower.png`"
+            :src="`${BASE_URL}/images/cover/deco-tower.webp`"
             alt=""
             class="cover-deco cover-tower"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-personna-tiny.png`"
+            :src="`${BASE_URL}/images/cover/deco-personna-tiny.webp`"
             alt=""
             class="cover-deco cover-personna-tiny"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-chain.png`"
+            :src="`${BASE_URL}/images/cover/deco-chain.webp`"
             alt=""
             class="cover-deco cover-chain"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-personna.png`"
+            :src="`${BASE_URL}/images/cover/deco-personna.webp`"
             alt=""
             class="cover-deco cover-personna"
           />
           <img
-            :src="`${BASE_URL}/images/cover/deco-chip.png`"
+            :src="`${BASE_URL}/images/cover/deco-chip.webp`"
             alt=""
             class="cover-deco cover-chip"
           />
           <img
-            :src="`${BASE_URL}/images/cover/title.png`"
+            :src="`${BASE_URL}/images/cover/title.webp`"
             alt="腦補計畫"
             class="cover-title"
           />
           <button class="cover-btn" @click="showIntro = false">
             <img
-              :src="`${BASE_URL}/images/cover/btn.png`"
+              :src="`${BASE_URL}/images/cover/btn.webp`"
               alt="開始旅程"
               class="cover-btn-img"
             />

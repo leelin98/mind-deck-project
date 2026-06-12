@@ -11,6 +11,10 @@ import MindDeck from '../components/MindDeck.vue'
   <meta name="theme-color" content="#EEF3FA" />
   <title>MIND·DECK — 腦補計畫</title>
   <link rel="icon" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/favicon.ico`} />
+  {/* Landing cover 關鍵素材預載：Vue 啟動前就開始下載，避免遮蓋空窗 */}
+  {['bg.webp', 'title.webp', 'btn.webp'].map((f) => (
+    <link rel="preload" as="image" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/images/cover/${f}`} />
+  ))}
 </head>
 <body>
   <MindDeck client:load />
