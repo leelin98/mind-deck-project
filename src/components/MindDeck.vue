@@ -1,12 +1,58 @@
 <template>
   <div class="mind-deck">
-    <!-- 首次進入遮蓋（蓋住手機版範圍，純色底待自行設計） -->
-    <Transition name="modal">
-      <div
-        v-if="showIntro"
-        class="intro-cover"
-        @click.self="showIntro = false"
-      ></div>
+    <!-- 首次進入遮蓋：素材分層依 cover.png 定位，按鈕觸發圓形揭開 -->
+    <Transition name="intro">
+      <div v-if="showIntro" class="intro-cover">
+        <div v-if="coverReady" class="cover-stage">
+          <img
+            :src="`${BASE_URL}/images/cover/bg.png`"
+            alt=""
+            class="cover-bg"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-brain.png`"
+            alt=""
+            class="cover-deco cover-brain"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-tower.png`"
+            alt=""
+            class="cover-deco cover-tower"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-personna-tiny.png`"
+            alt=""
+            class="cover-deco cover-personna-tiny"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-chain.png`"
+            alt=""
+            class="cover-deco cover-chain"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-personna.png`"
+            alt=""
+            class="cover-deco cover-personna"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/deco-chip.png`"
+            alt=""
+            class="cover-deco cover-chip"
+          />
+          <img
+            :src="`${BASE_URL}/images/cover/title.png`"
+            alt="腦補計畫"
+            class="cover-title"
+          />
+          <button class="cover-btn" @click="showIntro = false">
+            <img
+              :src="`${BASE_URL}/images/cover/btn.png`"
+              alt="開始旅程"
+              class="cover-btn-img"
+            />
+          </button>
+        </div>
+      </div>
     </Transition>
 
     <!-- ── Top Nav ── -->
@@ -303,6 +349,15 @@
                   @pick="handleFanPick"
                   @remove="handleFanRemove"
                 />
+              </div>
+
+              <!-- 已挑戰完成：保留底部區塊，避免 bottom-nav 蓋住內文最後 -->
+              <div v-else class="combat-completed-notice">
+                <span class="combat-completed-icon">🏆</span>
+                <p class="combat-completed-title">已挑戰完成</p>
+                <p class="combat-completed-sub">
+                  這篇新聞的戰鬥已結束，新聞卡已收錄至你的腦補包
+                </p>
               </div>
             </template>
 
@@ -1144,6 +1199,8 @@ const anyModalOpen = computed(
 
 // ── 首次進入遮蓋 ──────────────────────────────────────────────────────
 const showIntro = ref(true);
+// cover 素材延後一幀掛載：先顯示純色底，版面穩定後才放素材（防縮放閃爍）
+const coverReady = ref(false);
 
 // ── bottom-nav icon 圖檔載入失敗記錄（退回 fallback 字元）──────────
 const navIconFailed = reactive({});
@@ -1576,12 +1633,12 @@ watch(anyModalOpen, (open) => {
   }
 });
 
-// 切換新聞時重置圖片狀態；離開詳細頁時恢復 nav
+// 切換新聞時重置圖片狀態；進出詳細頁都恢復 nav 顯示
 watch(
   () => state.newsDetailMode,
-  (mode) => {
+  () => {
     articleImgFailed.value = false;
-    if (!mode) navHidden.value = false;
+    navHidden.value = false;
   },
 );
 
@@ -1717,6 +1774,8 @@ onMounted(() => {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       navShow.value = true;
+      // 等樣式與版面穩定後才掛上 cover 素材，避免首幀縮放未套用的閃爍
+      coverReady.value = true;
     });
   });
 
@@ -1733,8 +1792,14 @@ onMounted(() => {
 
     lenis.on("scroll", ({ scroll, direction, limit }) => {
       if (state.activeTab === "combat" && !state.newsDetailMode) return;
-      // 新聞內頁：接近底部（手牌區）時 nav 保持隱藏，避免擋到卡牌
-      if (state.newsDetailMode && limit - scroll < 360) {
+      // 新聞內頁且手牌區存在時：接近底部保持隱藏 nav，避免擋到卡牌
+      // （已完成/歸檔的新聞沒有手牌，不適用，否則短頁面會永遠隱藏）
+      const hasFanStage =
+        state.newsDetailMode &&
+        state.combatPhase === "select" &&
+        !state.activeNews?.completed &&
+        !state.activeNews?.archived;
+      if (hasFanStage && limit - scroll < 360) {
         navHidden.value = true;
         return;
       }
