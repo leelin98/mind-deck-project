@@ -400,7 +400,7 @@
                   </p>
                   <div class="result-news-card-earned">
                     <img
-                      :src="`${BASE_URL}/images/cards/news-001.jpg`"
+                      :src="`${BASE_URL}/images/cards/news-001.webp`"
                       class="result-news-card-img"
                       alt="新聞卡"
                     />
@@ -667,7 +667,7 @@
                     @click="openNewsCardPreview(news)"
                   >
                     <img
-                      :src="`${BASE_URL}/images/cards/news-001.jpg`"
+                      :src="`${BASE_URL}/images/cards/news-001.webp`"
                       :alt="news.title"
                       class="news-fan-img"
                     />
@@ -1018,7 +1018,7 @@
             ✕
           </button>
           <img
-            :src="`${BASE_URL}/images/cards/news-001.jpg`"
+            :src="`${BASE_URL}/images/cards/news-001.webp`"
             :alt="state.newsCardPreview.news.title"
             class="fcard-pure-img"
             @click="goToNewsFromCard(state.newsCardPreview.news)"
@@ -1391,9 +1391,9 @@ function getCard(id) {
 
 function getCardImage(card) {
   if (card.cardImage) return `${BASE_URL}/images/cards/${card.cardImage}`;
-  if (card.sponsor) return `${BASE_URL}/images/cards/figure-sponsored-001.jpg`;
-  if (card.type === "tech") return `${BASE_URL}/images/cards/assest-002.jpg`;
-  return `${BASE_URL}/images/cards/assest-001.jpg`;
+  if (card.sponsor) return `${BASE_URL}/images/cards/figure-sponsored-001.webp`;
+  if (card.type === "tech") return `${BASE_URL}/images/cards/assest-002.webp`;
+  return `${BASE_URL}/images/cards/assest-001.webp`;
 }
 
 function isNewsEarned(newsId) {
@@ -1824,6 +1824,16 @@ onMounted(() => {
     };
     lenisRafId = requestAnimationFrame(raf);
   }
+
+  // 背景預熱卡圖：cover 顯示期間先抓進快取，之後開知識庫/戰鬥即點即開
+  setTimeout(() => {
+    const files = new Set(state.cards.map((c) => c.cardImage).filter(Boolean));
+    files.add("news-001.webp"); // 新聞卡通用卡面
+    for (const f of files) {
+      const img = new Image();
+      img.src = `${BASE_URL}/images/cards/${f}`;
+    }
+  }, 1200);
 
   // Swiper autoplay 看門狗：每 2 秒確認輪播持續運轉
   swiperWatchdogId = setInterval(() => {

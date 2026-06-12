@@ -33,8 +33,8 @@ const glyphs = { asset: '⬡', tech: '◈', strategy: '▲', sponsor: '★' }
 const cardImage = computed(() => {
   if (!props.card) return ''
   if (props.card.cardImage) return `${BASE}/images/cards/${props.card.cardImage}`
-  if (props.card.sponsor) return `${BASE}/images/cards/figure-sponsored-001.jpg`
-  if (props.card.type === 'tech') return `${BASE}/images/cards/assest-002.jpg`
-  return `${BASE}/images/cards/assest-001.jpg`
+  if (props.card.sponsor) return `${BASE}/images/cards/figure-sponsored-001.webp`
+  if (props.card.type === 'tech') return `${BASE}/images/cards/assest-002.webp`
+  return `${BASE}/images/cards/assest-001.webp`
 })
 </script>
